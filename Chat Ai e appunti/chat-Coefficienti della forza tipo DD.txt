@@ -1,0 +1,2377 @@
+### USER
+Ciao allora devo utilizzare questo MEMS (poi con apposito circuito di condizionamento TIA + amplificatore non invertente). Sostanzialmente vorrei capire bene bene come funziona ce, praticamente vorrei arrivare ad un modello semplificato R L C e i loro valori, e in parallelo una capacità Cp tipo parassita e mi devi dire da cosa sarebbe dovuta e perchè proprio in parallelo. Ce vorrei capire come funziona cioè tipo però VT=0 cioè non uso quel terminale e praticamente voglio studiare SOLO IL PRIMO MODO ce vorrei eccitare SOLO IL PRIMO MODO! Ce sostanzialmente il secondo modo vorrei togliermelo via non lo considero. Sotanzialmente il setup è con Vin che è gated cioè gestita tipo da un segnale gate che è una quadra ok che attiva/toglie l'oscillazione e poi osservo come decade ce poi mi dovrò concentrare su tecniche per ridurre il tempo di decadimento / rilassamento dell'oscillazione. Però questo dopo. Prima vorrei ricavare il modello. Ce e poi come funziona cioè Vdc - Vin eccita su una capacità e provoca movimento ce forza elettrostatica e poi c'è l'altra tra Vin e massa che è sostanzialmente il mio modello R L C capisci cosa intendo? mi devi spiegare bene come funziona in base a quello che devo fare e soprattuto partendo da quello he dice il paper tipo le equaizoni q(t) o q^^ tipo la derivata seconda ce che cosa sono cos'è q ce non capisco wtf ecco comunque tipo vorrei arrivare al modello RLC ce con i parametri se si riesce ce però mi devi spiegare bene perchè non so praticamente un cazzo di sto MEMS ce non dar enulla per scontato fammi capire bene bene bene tutte le considerazioni e tutti i passaggi
+
+### ASSISTANT
+Ciao. Ti faccio un discorso “da zero”, perché qui si mescolano meccanica, elettrostatica e circuito equivalente. L’obiettivo è: capire cosa significa il modello del paper, come si riduce al solo primo modo, e come arrivare a un modello elettrico tipo **RLC serie in parallelo a una capacità \(C_p\)** con valori stimati/estraibili.
+
+Ti avviso subito di una cosa importante: **i valori esatti di R-L-C equivalenti non sono universali**, dipendono da:
+
+- quale elettrodo usi come porta elettrica (drive, sense, o uno stesso elettrodo per drive/sense);
+- quanta area affacciata agli elettrodi partecipa davvero al modo;
+- quanto vale il bias \(V_{DC}\);
+- come normalizzi la coordinata meccanica;
+- quanto includi package, pad, amplificatore, feedthrough.
+
+Quindi ti do:
+
+1. il modello concettuale corretto;
+2. le formule per calcolarti RLC e \(C_p\);
+3. una stima numerica ragionevole con i dati dei paper;
+4. un metodo pratico per estrarre i valori dalle tue misure.
+
+---
+
+# 1. Che cos’è questo MEMS e cosa stai eccitando
+
+Il dispositivo dei paper è un risonatore MEMS ad arco, con due beam curvi clampati, fabbricato in polisilicon. Ha due modi in-plane principali:
+
+- primo modo flexural in-plane: circa  
+  \[
+  f_{r1} \approx 416.6\ \text{kHz}
+  \]
+- secondo modo flexural in-plane: circa  
+  \[
+  f_{r2} \approx 834.15\ \text{kHz}
+  \]
+
+Il secondo è quasi il doppio del primo, quindi può nascere una **internal resonance 1:2**. Ma tu vuoi studiare **solo il primo modo**, quindi:
+
+- ecciti intorno a \(f_{r1}\);
+- tieni bassa l’ampiezza;
+- eviti condizioni che attivano la 1:2 internal resonance;
+- nel modello ignori il secondo modo.
+
+Nei paper, quando la 1:2 internal resonance non è attivata, la risposta del primo modo è sostanzialmente quella di un oscillatore smorzato con softening elettrostatico.
+
+---
+
+# 2. Cosa sono \(q(t)\), \(\dot q(t)\), \(\ddot q(t)\) nel paper
+
+Nel paper di Frangi/Gobat/Touzé ecc. trovi equazioni tipo:
+
+\[
+M \ddot q_i + M \beta_i(q) = F_i(q)
+\]
+
+e poi, con smorzamento:
+
+\[
+\ddot q_i + \frac{\omega_{0i}}{Q_i}\dot q_i + \beta_i(q) = \text{forze elettrostatiche}
+\]
+
+La cosa fondamentale è:
+
+> **\(q_i(t)\) NON è una carica elettrica.**  
+> È una coordinata modale, cioè un’ampiezza generalizzata del modo meccanico.
+
+Più precisamente, il campo di spostamento viene approssimato come:
+
+\[
+u(x,t) \approx \psi_1(x) q_1(t) + \psi_2(x) q_2(t)
+\]
+
+dove:
+
+- \(\psi_i(x)\) è la forma modale del modo \(i\);
+- \(q_i(t)\) è l’ampiezza temporale di quel modo.
+
+Se le forme modali sono normalizzate opportunamente, \(q_i\) ha dimensioni di uno spostamento, tipicamente metri o micrometri. Quindi:
+
+- \(q_i\) → spostamento modale;
+- \(\dot q_i\) → velocità modale;
+- \(\ddot q_i\) → accelerazione modale.
+
+Nel paper, per il primo modo, in zona lineare puoi pensare:
+
+\[
+\beta_1(q_1) \approx \omega_{01}^2 q_1
+\]
+
+Infatti in Tabella 1 del paper il coefficiente lineare del primo modo è circa:
+
+\[
+c_1^{(1)} \approx 6.85\ \mu s^{-2}
+\]
+
+e:
+
+\[
+\omega_{01} = \sqrt{6.85}\ \mu s^{-1} \approx 2.62\ \mu s^{-1}
+\]
+
+che corrisponde a:
+
+\[
+f_{01} = \frac{\omega_{01}}{2\pi}
+\approx \frac{2.62 \times 10^6}{2\pi}
+\approx 416\ \text{kHz}
+\]
+
+Qu quel \(q_1\) è proprio l’ampiezza del primo modo.
+
+---
+
+# 3. Equazione del solo primo modo con \(V_T = 0\)
+
+Nel paper l’equazione del primo modo, semplificando, è tipo Eq. (17):
+
+\[
+\ddot q_1
++ \frac{\omega_{01}}{Q_1}\dot q_1
++ \beta_1(q_1,q_2)
+- f_{DD}^{(1)}(q_1,q_2) V_{DC}^2
+- 2 f_{DT}^{(1)}(q_1,q_2) V_{DC}V_T
+- f_{TT}^{(1)}(q_1,q_2) V_T^2
+=
+2 V_{DC} V_{AC} f_{DA}^{(1)}(q_1,q_2)\sin(\omega t)
+\]
+
+Tu vuoi:
+
+- usare solo il primo modo;
+- non usare il tuning, quindi \(V_T=0\);
+- non considerare il secondo modo, quindi \(q_2=0\).
+
+Allora l’equazione diventa:
+
+\[
+\ddot q_1
++ \frac{\omega_{01}}{Q_1}\dot q_1
++ \beta_1(q_1,0)
+- f_{DD}^{(1)}(q_1,0) V_{DC}^2
+=
+2 V_{DC} V_{AC} f_{DA}^{(1)}(q_1,0)\sin(\omega t)
+\]
+
+Questa è l’equazione modale del primo modo.
+
+---
+
+## 3.1 Linearizzazione attorno all’equilibrio
+
+Il termine:
+
+\[
+f_{DD}^{(1)}(q_1,0)V_{DC}^2
+\]
+
+contiene:
+
+- una parte costante, che crea una deflessione statica;
+- una parte proporzionale a \(q_1\), che modifica la rigidezza meccanica.
+
+La parte costante ti sposta la posizione di equilibrio. Di solito si lavora attorno a quell’equilibrio e si considera solo la dinamica piccola attorno ad esso.
+
+La parte proporzionale a \(q_1\) produce il cosiddetto **electrostatic softening**, cioè una riduzione della rigidezza efficace. Quindi la frequenza del primo modo dipende da \(V_{DC}\).
+
+Linearizzando:
+
+\[
+\beta_1(q_1,0) \approx \omega_{01}^2 q_1
+\]
+
+\[
+f_{DD}^{(1)}(q_1,0)
+\approx
+f_{DD,0}^{(1)}
++
+f_{DD,1}^{(1)} q_1
+\]
+
+\[
+f_{DA}^{(1)}(q_1,0)
+\approx
+f_{DA,0}^{(1)}
+\]
+
+L’equazione lineare diventa:
+
+\[
+\ddot q_1
++
+\frac{\omega_{01}}{Q_1}\dot q_1
++
+\left[
+\omega_{01}^2
+-
+f_{DD,1}^{(1)}V_{DC}^2
+\right]q_1
+=
+2 V_{DC} f_{DA,0}^{(1)} v_{in}(t)
+\]
+
+dove ho indicato con \(v_{in}(t)\) il segnale AC applicato all’elettrodo di drive.
+
+Puoi scrivere:
+
+\[
+\omega_1^2(V_{DC})
+=
+\omega_{01}^2
+-
+f_{DD,1}^{(1)}V_{DC}^2
+\]
+
+e:
+
+\[
+G(V_{DC}) =
+2 V_{DC} f_{DA,0}^{(1)}
+\]
+
+Quindi:
+
+\[
+\boxed{
+\ddot q_1
++
+\frac{\omega_1}{Q_1}\dot q_1
++
+\omega_1^2 q_1
+=
+G(V_{DC}) v_{in}(t)
+}
+\]
+
+Questa è l’equazione di un oscillatore forzato del primo ordine modale.
+
+---
+
+# 4. Significato fisico: perché serve \(V_{DC}\)
+
+Il MEMS è un dispositivo capacitivo. Hai una struttura mobile e degli elettrodi fissi. La forza elettrostatica è proporzionale al quadrato della tensione tra le armature.
+
+Se tra shuttle/elettrodo hai una tensione:
+
+\[
+V(t) = V_{DC} + v_{in}(t)
+\]
+
+la forza elettrostatica è, in prima approssimazione:
+
+\[
+F_e \propto \frac{1}{2} V(t)^2 \frac{dC}{dx}
+\]
+
+Espandendo:
+
+\[
+V(t)^2 =
+V_{DC}^2
++
+2 V_{DC} v_{in}(t)
++
+v_{in}^2(t)
+\]
+
+Hai tre contributi:
+
+1. \(V_{DC}^2\): forza statica, crea deflessione statica e softening;
+2. \(2 V_{DC} v_{in}(t)\): forza lineare alla stessa frequenza di \(v_{in}\);
+3. \(v_{in}^2(t)\): termine non lineare, spesso trascurabile se \(v_{in} \ll V_{DC}\), e comunque genera componenti a frequenza doppia.
+
+Quindi:
+
+> **\(V_{DC}\) serve per rendere lineare l’attuazione.**  
+> Senza \(V_{DC}\), se applichi solo \(v_{in}\), la forza va come \(v_{in}^2\), quindi ecciti soprattutto a frequenza doppia e con meccanismo parametrico/non lineare.
+
+Nel paper infatti il termine di forcing è proporzionale a:
+
+\[
+2 V_{DC} V_{AC}
+\]
+
+---
+
+# 5. Lettura capacitiva: perché esce una corrente
+
+Quando il MEMS si muove, cambia la capacità tra shuttle ed elettrodi.
+
+Se una capacità \(C(x)\) è polarizzata con una tensione circa costante \(V_{DC}\), la carica è:
+
+\[
+Q_e = C(x) V_{DC}
+\]
+
+Se \(x\) si muove:
+
+\[
+i(t) = \frac{dQ_e}{dt}
+=
+V_{DC}\frac{dC}{dx}\dot x
+\]
+
+Quindi la corrente di lettura è proporzionale alla velocità meccanica:
+
+\[
+\boxed{
+i_{sense}(t) \approx \alpha_s \dot x(t)
+}
+\]
+
+dove:
+
+\[
+\alpha_s = V_{DC}\frac{dC_s}{dx}
+\]
+
+è un coefficiente di trasduzione elettromeccanica.
+
+Nel paper questo concetto appare nella current equation, Eq. (15), tipo:
+
+\[
+I(q) = \sum_i f_{DA}^{(i)}(q) V_{DC} \dot q_i
+\]
+
+Cioè: la corrente in uscita dal sense electrode è proporzionale a \(V_{DC}\) e alla velocità modale.
+
+---
+
+# 6. Modello meccanico equivalente: massa-molla-smorzatore
+
+Per arrivare a un modello RLC elettrico, conviene prima scrivere il primo modo come un classico oscillatore lumped:
+
+\[
+\boxed{
+m_{eff}\ddot x
++
+c_{eff}\dot x
++
+k_{eff}x
+=
+\alpha_d v_{in}(t)
+}
+\]
+
+dove:
+
+- \(x(t)\) è uno spostamento fisico rappresentativo, ad esempio lo spostamento a metà campata o una coordinata equivalente;
+- \(m_{eff}\) è la massa efficace del primo modo;
+- \(k_{eff}\) è la rigidezza efficace;
+- \(c_{eff}\) è lo smorzamento efficace;
+- \(\alpha_d\) è il coefficiente forza/tensione, in N/V.
+
+I parametri sono legati da:
+
+\[
+\omega_1 = 2\pi f_1
+\]
+
+\[
+k_{eff} = m_{eff}\omega_1^2
+\]
+
+\[
+c_{eff} = \frac{m_{eff}\omega_1}{Q_1}
+\]
+
+\[
+Q_1 = \frac{m_{eff}\omega_1}{c_{eff}}
+\]
+
+Il paper riporta per il primo modo:
+
+- \(f_1 \approx 416.6\ \text{kHz}\);
+- \(Q_1\) simulato circa 2699;
+- \(Q_1\) sperimentale circa \(2860 \pm 150\);
+- nell’IEEE Sensors Letters, da free decay, viene stimato circa \(Q \approx 3310\) in condizione senza 1:2 IR.
+
+Per un modello pratico puoi usare:
+
+\[
+Q_1 \approx 2800 \div 3300
+\]
+
+a seconda delle condizioni.
+
+---
+
+# 7. Come nasce il circuito equivalente RLC
+
+Il punto chiave è che un risonatore meccanico capacitivo, visto elettricamente da una porta, può essere rappresentato come:
+
+- una capacità statica/parassita \(C_p\);
+- in parallelo, un ramo serie \(R_m-L_m-C_m\) che rappresenta la risonanza meccanica riflessa nel dominio elettrico.
+
+Questo è il classico modello tipo Butterworth-Van Dyke / motional branch.
+
+Partiamo dall’equazione meccanica lineare:
+
+\[
+m\ddot x + c\dot x + kx = \alpha v(t)
+\]
+
+In Laplace:
+
+\[
+(ms^2 + cs + k)X(s) = \alpha V(s)
+\]
+
+quindi:
+
+\[
+X(s) = \frac{\alpha}{ms^2 + cs + k} V(s)
+\]
+
+La corrente motionale, per una porta elettrica, è:
+
+\[
+i_m(t) = \alpha \dot x(t)
+\]
+
+In Laplace:
+
+\[
+I_m(s) = \alpha s X(s)
+\]
+
+Sostituendo:
+
+\[
+I_m(s)
+=
+\frac{\alpha^2 s}{ms^2 + cs + k} V(s)
+\]
+
+Quindi l’ammettenza motional è:
+
+\[
+Y_m(s)
+=
+\frac{I_m(s)}{V(s)}
+=
+\frac{\alpha^2 s}{ms^2 + cs + k}
+\]
+
+L’impedenza motional è:
+
+\[
+Z_m(s)
+=
+\frac{V(s)}{I_m(s)}
+=
+\frac{ms^2 + cs + k}{\alpha^2 s}
+\]
+
+Spezzando i termini:
+
+\[
+Z_m(s)
+=
+\frac{m}{\alpha^2}s
++
+\frac{c}{\alpha^2}
++
+\frac{k}{\alpha^2}\frac{1}{s}
+\]
+
+Questa è esattamente l’impedenza di un ramo serie RLC:
+
+\[
+Z_m(s) = sL_m + R_m + \frac{1}{sC_m}
+\]
+
+con:
+
+\[
+\boxed{
+L_m = \frac{m_{eff}}{\alpha^2}
+}
+\]
+
+\[
+\boxed{
+R_m = \frac{c_{eff}}{\alpha^2}
+}
+\]
+
+\[
+\boxed{
+C_m = \frac{\alpha^2}{k_{eff}}
+}
+\]
+
+E la risonanza del ramo motional è:
+
+\[
+\omega_m = \frac{1}{\sqrt{L_m C_m}}
+=
+\sqrt{\frac{k_{eff}}{m_{eff}}}
+=
+\omega_1
+\]
+
+Infatti:
+
+\[
+L_m C_m
+=
+\frac{m}{\alpha^2}
+\frac{\alpha^2}{k}
+=
+\frac{m}{k}
+\]
+
+---
+
+# 8. Perché \(C_p\) sta in parallelo
+
+La capacità \(C_p\) rappresenta la capacità elettrica “statica” vista tra i terminali della porta elettrica. Comprende:
+
+- capacità nominale tra elettrodo fisso e shuttle;
+- capacità tra shuttle e substrate, se presente;
+- capacità dei pad;
+- capacità del package;
+- capacità di ingresso dell’amplificatore;
+- feedthrough capacitivo tra drive e sense, se riferito alla porta;
+- eventuali capacità parassite di layout.
+
+Perché in parallelo?
+
+Perché quella capacità è un percorso elettrico diretto tra gli stessi nodi della porta. Anche se il MEMS non si muove, se applichi una tensione variabile ai capi della porta passa una corrente capacitiva:
+
+\[
+i_{C_p}(t) = C_p \frac{dv(t)}{dt}
+\]
+
+La corrente totale elettrica è la somma di:
+
+1. corrente capacitiva statica/parassita:
+   \[
+   i_{C_p} = C_p \dot v
+   \]
+
+2. corrente motazionale dovuta al movimento:
+   \[
+   i_m = \alpha \dot x
+   \]
+
+Quindi, in Laplace:
+
+\[
+I(s) = sC_p V(s) + I_m(s)
+\]
+
+\[
+I(s)
+=
+\left[
+sC_p
++
+\frac{\alpha^2 s}{ms^2 + cs + k}
+\right]V(s)
+\]
+
+Quindi l’ammettenza totale è:
+
+\[
+\boxed{
+Y(s)
+=
+sC_p
++
+\frac{1}{sL_m + R_m + \frac{1}{sC_m}}
+}
+\]
+
+Ecco perché il circuito equivalente è:
+
+```text
+          ┌────────────── Lm ─── Rm ─── Cm ─────────────┐
+          │                                              │
+ nodo ────┤                                              ├─── GND
+          │                                              │
+          └──────────────────── Cp ─────────────────────┘
+```
+
+Il ramo \(L_m-R_m-C_m\) rappresenta la risonanza meccanica.  
+\(C_p\) rappresenta la capacità diretta/parassita.
+
+---
+
+# 9. Attenzione: nel tuo setup drive e sense sono separati
+
+Nei paper il dispositivo ha:
+
+- drive electrodes;
+- sense electrodes;
+- tuning electrodes;
+- dummy electrodes.
+
+Tu dici:
+
+- \(V_{in}\) gated sul drive;
+- lettura con TIA;
+- \(V_T=0\), non usato.
+
+Se drive e sense sono elettrodi separati, il modello più pulito è un modello a due porte:
+
+## Lato drive
+
+Il drive voltage produce una forza:
+
+\[
+F_d(t) = \alpha_d v_{in}(t)
+\]
+
+## Meccanica
+
+\[
+m\ddot x + c\dot x + kx = \alpha_d v_{in}(t)
+\]
+
+## Lato sense
+
+La corrente di sense è:
+
+\[
+i_s(t) = \alpha_s \dot x(t)
+\]
+
+più eventuali feedthrough capacitivi.
+
+Quindi la transfer admittance drive-to-sense è:
+
+\[
+\boxed{
+\frac{I_s(s)}{V_{in}(s)}
+=
+\frac{\alpha_d \alpha_s s}{ms^2 + cs + k}
++
+sC_{ds}
+}
+\]
+
+dove \(C_{ds}\) è un eventuale feedthrough capacitivo drive-to-sense.
+
+Se vuoi comunque usare un modello one-port con un solo ramo RLC, puoi definire un coefficiente efficace:
+
+\[
+\alpha_{eff}^2 = \alpha_d \alpha_s
+\]
+
+e usare le stesse formule:
+
+\[
+L_m = \frac{m}{\alpha_{eff}^2}
+\]
+
+\[
+R_m = \frac{c}{\alpha_{eff}^2}
+\]
+
+\[
+C_m = \frac{\alpha_{eff}^2}{k}
+\]
+
+ma ricorda che sono valori “riferiti” alla tua specifica coppia drive/sense.
+
+---
+
+# 10. Stima dei parametri meccanici del primo modo
+
+Adesso proviamo a dare numeri.
+
+Dati dai paper:
+
+- primo modo:
+  \[
+  f_1 \approx 416.6\ \text{kHz}
+  \]
+- qualità:
+  \[
+  Q_1 \approx 2800 \div 3300
+  \]
+- gap nominale:
+  \[
+  g \approx 1.8\ \mu m
+  \]
+- beam:
+  - lunghezza rettificata: \(532\ \mu m\)
+  - cross-section: \(5 \times 24\ \mu m^2\)
+- materiale:
+  - \(\rho = 2330\ kg/m^3\)
+  - \(E = 167\ GPa\)
+
+La massa totale dei due beam è circa:
+
+\[
+V_{beams}
+=
+2 \cdot 532\mu m \cdot 5\mu m \cdot 24\mu m
+\]
+
+\[
+V_{beams}
+\approx
+1.28 \times 10^{-13}\ m^3
+\]
+
+\[
+m_{tot}
+=
+\rho V
+\approx
+2330 \cdot 1.28 \times 10^{-13}
+\approx
+3.0 \times 10^{-10}\ kg
+\]
+
+La massa efficace del primo modo non è tutta la massa strutturale. Per un modo flessionale, spesso una frazione ragionevole è tra 0.2 e 0.5 della massa mobile totale, a seconda di dove normalizzi lo spostamento.
+
+Una stima ordine-di-grandezza:
+
+\[
+m_{eff} \approx 1 \times 10^{-10}\ kg
+\]
+
+Usiamo:
+
+\[
+f_1 = 416.6\ kHz
+\]
+
+\[
+\omega_1 = 2\pi f_1 \approx 2.62 \times 10^6\ rad/s
+\]
+
+Allora:
+
+\[
+k_{eff}
+=
+m_{eff}\omega_1^2
+\]
+
+Con \(m_{eff}=1\times10^{-10}\ kg\):
+
+\[
+k_{eff}
+\approx
+1\times10^{-10}
+\cdot
+(2.62\times10^6)^2
+\]
+
+\[
+k_{eff}
+\approx
+685\ N/m
+\]
+
+Ordine di grandezza:
+
+\[
+\boxed{
+k_{eff} \approx 600 \div 900\ N/m
+}
+\]
+
+Per lo smorzamento:
+
+\[
+c_{eff}
+=
+\frac{m_{eff}\omega_1}{Q_1}
+\]
+
+Con \(Q_1=2800\):
+
+\[
+c_{eff}
+\approx
+\frac{1\times10^{-10} \cdot 2.62\times10^6}{2800}
+\]
+
+\[
+c_{eff}
+\approx
+9.3\times10^{-8}\ Ns/m
+\]
+
+Con \(Q_1=3300\):
+
+\[
+c_{eff}
+\approx
+7.9\times10^{-8}\ Ns/m
+\]
+
+Quindi:
+
+\[
+\boxed{
+c_{eff} \approx 8\times10^{-8} \div 1\times10^{-7}\ Ns/m
+}
+\]
+
+---
+
+# 11. Stima della capacità statica \(C_p\)
+
+Per una stima molto rozza, considera un gap parallelo-piano:
+
+\[
+C_{gap}
+=
+\frac{\varepsilon_0 A}{g}
+\]
+
+L’area affacciata di un lato di un beam può essere circa:
+
+\[
+A
+\approx
+532\mu m \cdot 24\mu m
+=
+1.28\times10^4\ \mu m^2
+\]
+
+\[
+A
+\approx
+1.28\times10^{-8}\ m^2
+\]
+
+Con:
+
+\[
+g = 1.8\ \mu m
+\]
+
+\[
+C_{gap}
+\approx
+\frac{8.85\times10^{-12} \cdot 1.28\times10^{-8}}{1.8\times10^{-6}}
+\]
+
+\[
+C_{gap}
+\approx
+6.3\times10^{-14}\ F
+\]
+
+\[
+C_{gap}
+\approx
+63\ fF
+\]
+
+Quindi un singolo gap utile dà circa:
+
+\[
+\boxed{
+C_{gap} \approx 60\ fF
+}
+\]
+
+Se hai più gap attivi, ad esempio 2, 4, ecc., la capacità on-chip può essere:
+
+\[
+C_{MEMS} \approx 120 \div 300\ fF
+\]
+
+Ma il package, i pad, i bondwire e l’ingresso del TIA possono aggiungere facilmente:
+
+\[
+0.1 \div 1\ pF
+\]
+
+o anche più, a seconda del layout.
+
+Quindi una \(C_p\) totale realistica può essere:
+
+\[
+\boxed{
+C_p \approx 0.2 \div 1.5\ pF
+}
+\]
+
+se includi anche package e front-end.
+
+Se vuoi solo la capacità intrinseca del MEMS, probabilmente sei più vicino a:
+
+\[
+\boxed{
+C_{p,MEMS} \approx 0.1 \div 0.3\ pF
+}
+\]
+
+---
+
+# 12. Stima del coefficiente di trasduzione \(\alpha\)
+
+Per un gap parallelo-piano:
+
+\[
+C(x) \approx \frac{\varepsilon_0 A}{g-x}
+\]
+
+\[
+\frac{dC}{dx}
+\approx
+\frac{\varepsilon_0 A}{g^2}
+\]
+
+Con i numeri di prima:
+
+\[
+\frac{dC}{dx}
+\approx
+\frac{8.85\times10^{-12}\cdot1.28\times10^{-8}}{(1.8\times10^{-6})^2}
+\]
+
+\[
+\frac{dC}{dx}
+\approx
+3.5\times10^{-8}\ F/m
+\]
+
+Cioè:
+
+\[
+\boxed{
+\frac{dC}{dx} \approx 35\ nF/m
+}
+\]
+
+per un singolo gap.
+
+Il coefficiente di trasduzione è:
+
+\[
+\alpha = V_{DC}\frac{dC}{dx}
+\]
+
+Quindi per un singolo gap:
+
+- con \(V_{DC}=5\ V\):
+
+\[
+\alpha_{gap}
+\approx
+5 \cdot 3.5\times10^{-8}
+=
+1.75\times10^{-7}\ N/V
+\]
+
+- con \(V_{DC}=7\ V\):
+
+\[
+\alpha_{gap}
+\approx
+2.45\times10^{-7}\ N/V
+\]
+
+- con \(V_{DC}=10\ V\):
+
+\[
+\alpha_{gap}
+\approx
+3.5\times10^{-7}\ N/V
+\]
+
+Per un singolo gap:
+
+\[
+\boxed{
+\alpha_{gap} \approx 1.7\times10^{-7}\ N/V \quad \text{a } V_{DC}=5V
+}
+\]
+
+Ma il dispositivo ha più elettrodi e più gap. Bisogna considerare un numero efficace \(N_{eff}\) di gap che partecipano davvero al modo e alla porta elettrica.
+
+Se definisci:
+
+\[
+\alpha_{eff}
+=
+N_{eff} V_{DC}
+\left(\frac{dC}{dx}\right)_{gap}
+\]
+
+allora, per \(V_{DC}=5V\):
+
+- \(N_{eff}=1\):  
+  \[
+  \alpha \approx 1.75\times10^{-7}\ N/V
+  \]
+
+- \(N_{eff}=2\):  
+  \[
+  \alpha \approx 3.5\times10^{-7}\ N/V
+  \]
+
+- \(N_{eff}=4\):  
+  \[
+  \alpha \approx 7.0\times10^{-7}\ N/V
+  \]
+
+Il valore reale dipende da geometria, modo, elettrodi usati e segno del movimento rispetto ai gap.
+
+---
+
+# 13. Valori stimati del ramo RLC motazionale
+
+Usiamo come esempio:
+
+\[
+m_{eff}=1\times10^{-10}\ kg
+\]
+
+\[
+k_{eff}=685\ N/m
+\]
+
+\[
+c_{eff}=9.3\times10^{-8}\ Ns/m
+\]
+
+\[
+f_1=416.6\ kHz
+\]
+
+\[
+Q_1=2800
+\]
+
+\[
+V_{DC}=5V
+\]
+
+\[
+\left(\frac{dC}{dx}\right)_{gap}
+\approx
+35\ nF/m
+\]
+
+Consideriamo tre scenari:
+
+---
+
+## Caso A: \(N_{eff}=1\)
+
+\[
+\alpha
+\approx
+1.75\times10^{-7}\ N/V
+\]
+
+\[
+L_m = \frac{m}{\alpha^2}
+\]
+
+\[
+L_m
+\approx
+\frac{1\times10^{-10}}{(1.75\times10^{-7})^2}
+\approx
+3.3\times10^3\ H
+\]
+
+\[
+R_m = \frac{c}{\alpha^2}
+\]
+
+\[
+R_m
+\approx
+\frac{9.3\times10^{-8}}{3.1\times10^{-14}}
+\approx
+3.0\times10^6\ \Omega
+\]
+
+\[
+C_m = \frac{\alpha^2}{k}
+\]
+
+\[
+C_m
+\approx
+\frac{3.1\times10^{-14}}{685}
+\approx
+4.5\times10^{-17}\ F
+\]
+
+\[
+C_m \approx 45\ aF
+\]
+
+Quindi:
+
+\[
+\boxed{
+L_m \approx 3.3\ kH
+}
+\]
+
+\[
+\boxed{
+R_m \approx 3\ M\Omega
+}
+\]
+
+\[
+\boxed{
+C_m \approx 45\ aF
+}
+\]
+
+---
+
+## Caso B: \(N_{eff}=2\)
+
+\[
+\alpha \approx 3.5\times10^{-7}\ N/V
+\]
+
+\[
+L_m \approx 820\ H
+\]
+
+\[
+R_m \approx 760\ k\Omega
+\]
+
+\[
+C_m \approx 0.18\ fF
+\]
+
+\[
+\boxed{
+L_m \approx 0.8\ kH
+}
+\]
+
+\[
+\boxed{
+R_m \approx 0.7\div0.8\ M\Omega
+}
+\]
+
+\[
+\boxed{
+C_m \approx 0.18\ fF
+}
+\]
+
+---
+
+## Caso C: \(N_{eff}=4\)
+
+\[
+\alpha \approx 7.0\times10^{-7}\ N/V
+\]
+
+\[
+L_m \approx 205\ H
+\]
+
+\[
+R_m \approx 190\ k\Omega
+\]
+
+\[
+C_m \approx 0.7\ fF
+\]
+
+\[
+\boxed{
+L_m \approx 200\ H
+}
+\]
+
+\[
+\boxed{
+R_m \approx 190\ k\Omega
+}
+\]
+
+\[
+\boxed{
+C_m \approx 0.7\ fF
+}
+\]
+
+---
+
+## Dipendenza da \(V_{DC}\)
+
+Poiché:
+
+\[
+\alpha \propto V_{DC}
+\]
+
+allora:
+
+\[
+L_m \propto \frac{1}{V_{DC}^2}
+\]
+
+\[
+R_m \propto \frac{1}{V_{DC}^2}
+\]
+
+\[
+C_m \propto V_{DC}^2
+\]
+
+Quindi se passi da \(V_{DC}=5V\) a \(V_{DC}=10V\), \(\alpha\) raddoppia, \(\alpha^2\) quadruplica:
+
+- \(L_m\) diventa 4 volte più piccola;
+- \(R_m\) diventa 4 volte più piccola;
+- \(C_m\) diventa 4 volte più grande.
+
+La frequenza di risonanza invece resta circa la stessa, a parte electrostatic softening.
+
+---
+
+# 14. Tabella riassuntiva dei valori stimati
+
+Con:
+
+- \(f_1 \approx 416.6\ kHz\)
+- \(m_{eff}\approx 1\times10^{-10}\ kg\)
+- \(Q_1\approx 2800\)
+- \(V_{DC}=5V\)
+
+| \(N_{eff}\) | \(\alpha\) N/V | \(L_m\) | \(R_m\) | \(C_m\) |
+|---:|---:|---:|---:|---:|
+| 1 | \(1.75\times10^{-7}\) | \(3.3\ kH\) | \(3\ M\Omega\) | \(45\ aF\) |
+| 2 | \(3.5\times10^{-7}\) | \(820\ H\) | \(760\ k\Omega\) | \(0.18\ fF\) |
+| 4 | \(7.0\times10^{-7}\) | \(205\ H\) | \(190\ k\Omega\) | \(0.7\ fF\) |
+
+E per \(C_p\):
+
+| Contributo | Ordine di grandezza |
+|---|---:|
+| singolo gap MEMS | \(\sim 60\ fF\) |
+| 2-4 gap on-chip | \(\sim 120\div250\ fF\) |
+| package/pad/amp | spesso \(0.1\div1\ pF\) o più |
+| \(C_p\) totale pratica | \(\sim 0.2\div1.5\ pF\) |
+
+Questi numeri sono ordine-di-grandezza. Per avere valori precisi serve:
+
+- FEM con massa efficace e forma modale;
+- BEM o FEM elettrostatico per \(\partial C/\partial x\);
+- oppure estrazione sperimentale dalla transfer function e dal ring-down.
+
+---
+
+# 15. Come estrarre RLC dalle misure reali
+
+Questo è il modo più pratico.
+
+## 15.1 Misura la frequenza di risonanza
+
+Dal picco di risposta o dal FFT del free decay ottieni:
+
+\[
+f_1
+\]
+
+\[
+\omega_1 = 2\pi f_1
+\]
+
+---
+
+## 15.2 Misura il tempo di decadimento
+
+Con eccitazione gated:
+
+- fase ON: ecciti il risonatore;
+- fase OFF: osservi il free decay.
+
+Se il decadimento è:
+
+\[
+x(t) \approx X_0 e^{-t/\tau}\cos(\omega_d t+\phi)
+\]
+
+allora:
+
+\[
+\tau = \frac{2Q}{\omega_1}
+\]
+
+quindi:
+
+\[
+\boxed{
+Q = \frac{\omega_1 \tau}{2}
+}
+\]
+
+Ad esempio, con:
+
+\[
+f_1=416.6\ kHz
+\]
+
+\[
+\omega_1=2.62\times10^6\ rad/s
+\]
+
+e:
+
+\[
+Q=2800
+\]
+
+ottieni:
+
+\[
+\tau
+=
+\frac{2Q}{\omega_1}
+=
+\frac{5600}{2.62\times10^6}
+\approx
+2.1\ ms
+\]
+
+Se \(Q=3300\):
+
+\[
+\tau \approx 2.5\ ms
+\]
+
+Questo è il tempo caratteristico di decadimento dell’ampiezza.
+
+---
+
+## 15.3 Misura \(C_p\)
+
+Puoi stimare \(C_p\) in diversi modi:
+
+1. con LCR meter lontano dalla risonanza;
+2. dalla corrente capacitiva fuori risonanza;
+3. dal feedthrough capacitivo drive-to-sense;
+4. da simulazione elettrostatica FEM/BEM.
+
+In un modello one-port, lontano dalla risonanza il ramo motional è quasi aperto o comunque poco influente, e l’ammettenza è circa:
+
+\[
+Y(s) \approx sC_p
+\]
+
+Quindi:
+
+\[
+C_p \approx \frac{\operatorname{Im}(Y)}{\omega}
+\]
+
+---
+
+## 15.4 Misura \(R_m\) dalla corrente a risonanza
+
+Se riesci a separare la corrente motazionale dal feedthrough capacitivo, alla risonanza il ramo motional serie è puramente resistivo.
+
+Per un one-port:
+
+\[
+|I_{mot}| = \frac{|V_{ac}|}{R_m}
+\]
+
+quindi:
+
+\[
+\boxed{
+R_m = \frac{|V_{ac}|}{|I_{mot}|}
+}
+\]
+
+Nel tuo setup con TIA, se il guadagno transimpedance totale è \(G\), allora:
+
+\[
+V_{out} = G I_{sense}
+\]
+
+Nei paper il front-end ha, ad esempio:
+
+\[
+R_f = 100\ k\Omega
+\]
+
+\[
+\frac{R_2}{R_1} = \frac{1\ k\Omega}{100\ \Omega} = 10
+\]
+
+quindi:
+
+\[
+G = R_f \cdot 10 = 1\ M\Omega
+\]
+
+Cioè:
+
+\[
+1\ nA \rightarrow 1\ mV
+\]
+
+Se il tuo guadagno è diverso, usa il tuo valore.
+
+Esempio:
+
+- \(V_{ac}=100\ mV\) di picco;
+- corrente motazionale a risonanza \(I_{mot}=5\ nA\) di picco.
+
+Allora:
+
+\[
+R_m = \frac{0.1}{5\times10^{-9}}
+=
+20\ M\Omega
+\]
+
+Poi:
+
+\[
+L_m = \frac{Q R_m}{\omega_1}
+\]
+
+\[
+C_m = \frac{1}{\omega_1^2 L_m}
+\]
+
+oppure:
+
+\[
+C_m = \frac{1}{\omega_1 R_m Q}
+\]
+
+Con:
+
+\[
+Q=2800
+\]
+
+\[
+\omega_1=2.62\times10^6
+\]
+
+\[
+R_m=20\ M\Omega
+\]
+
+ottieni:
+
+\[
+L_m
+=
+\frac{2800 \cdot 20\times10^6}{2.62\times10^6}
+\approx
+21.4\ kH
+\]
+
+\[
+C_m
+=
+\frac{1}{2.62\times10^6 \cdot 20\times10^6 \cdot 2800}
+\approx
+6.8\times10^{-20}\ F
+\]
+
+\[
+C_m \approx 0.068\ aF
+\]
+
+Questo è un esempio: i valori possono venire molto grandi/molto piccoli perché il ramo motional è riflesso elettricamente tramite \(\alpha\).
+
+---
+
+# 16. Modello finale sintetico
+
+Il modello più semplice per il solo primo modo è:
+
+## Meccanico
+
+\[
+\boxed{
+m_{eff}\ddot x
++
+c_{eff}\dot x
++
+k_{eff}x
+=
+\alpha_d v_{in}(t)
+}
+\]
+
+## Elettrico, sense current
+
+\[
+\boxed{
+i_{sense}(t)
+=
+\alpha_s \dot x(t)
++
+i_{feedthrough}(t)
+}
+\]
+
+## One-port equivalente
+
+Se vuoi un circuito equivalente elettrico:
+
+\[
+\boxed{
+Y(s)
+=
+sC_p
++
+\frac{1}{sL_m + R_m + \frac{1}{sC_m}}
+}
+\]
+
+con:
+
+\[
+\boxed{
+L_m = \frac{m_{eff}}{\alpha_{eff}^2}
+}
+\]
+
+\[
+\boxed{
+R_m = \frac{c_{eff}}{\alpha_{eff}^2}
+}
+\]
+
+\[
+\boxed{
+C_m = \frac{\alpha_{eff}^2}{k_{eff}}
+}
+\]
+
+---
+
+# 17. Come funziona il tuo setup gated
+
+Tu vuoi usare un \(V_{in}\) gated, cioè:
+
+\[
+v_{in}(t) = g(t) V_{ac}\sin(\omega t)
+\]
+
+dove \(g(t)\) è un segnale square che alterna:
+
+- ON: eccitazione;
+- OFF: free decay.
+
+Durante ON, se \(\omega \approx \omega_1\), l’ampiezza cresce con costante di tempo simile al ring-down:
+
+\[
+\tau = \frac{2Q}{\omega_1}
+\]
+
+Durante OFF, l’equazione diventa libera:
+
+\[
+m\ddot x + c\dot x + kx = 0
+\]
+
+La soluzione è:
+
+\[
+x(t)
+\approx
+X_0 e^{-t/\tau}
+\cos(\omega_d t+\phi)
+\]
+
+con:
+
+\[
+\omega_d
+=
+\omega_1
+\sqrt{1-\frac{1}{4Q^2}}
+\approx
+\omega_1
+\]
+
+e:
+
+\[
+\tau = \frac{2Q}{\omega_1}
+\]
+
+La corrente letta dal TIA segue la velocità:
+
+\[
+i_{sense}(t)
+\approx
+\alpha_s \dot x(t)
+\]
+
+Quindi anche la corrente decade con la stessa costante di tempo, ma è sfasata e proporzionale alla velocità.
+
+Per \(Q\approx 2800\):
+
+\[
+\tau \approx 2.1\ ms
+\]
+
+Per \(Q\approx 3300\):
+
+\[
+\tau \approx 2.5\ ms
+\]
+
+Se vuoi che l’oscillazione si spenga molto più velocemente, devi ridurre \(Q\), oppure usare tecniche di damping attivo.
+
+---
+
+# 18. Perché il secondo modo “sparisce” solo se non attivi la 1:2 internal resonance
+
+Matematicamente, se vuoi ignorare il secondo modo, poni:
+
+\[
+q_2(t)=0
+\]
+
+Ma fisicamente il secondo modo esiste sempre.
+
+Il secondo modo diventa importante quando:
+
+\[
+\omega_2 \approx 2\omega_1
+\]
+
+e l’ampiezza è sufficiente ad attivare i termini quadratici di accoppiamento.
+
+Nel paper, la 1:2 internal resonance produce:
+
+- due picchi nella FRF;
+- saddle-node bifurcations;
+- Neimark-Sacker bifurcations;
+- quasi-periodicità;
+- frequency comb;
+- beats nel dominio del tempo.
+
+Nel secondo paper, quando la 1:2 IR è attivata, nel free decay vedi due contributi:
+
+\[
+416.57\ kHz
+\]
+
+e:
+
+\[
+837.81\ kHz
+\]
+
+e il decadimento non è più una semplice esponenziale, ma mostra battimenti.
+
+Se tu vuoi solo il primo modo, devi vedere nel FFT principalmente una sola armonica, tipo:
+
+\[
+\sim 416\div418\ kHz
+\]
+
+e un decadimento circa esponenziale.
+
+Se vedi due armoniche o battimenti, hai attivato la internal resonance.
+
+---
+
+# 19. Nota importante su \(V_T=0\)
+
+Tu dici:
+
+> \(V_T=0\), non uso quel terminale.
+
+Attenzione: se gli elettrodi di tuning esistono fisicamente e sono a 0 V mentre lo shuttle è a \(V_{DC}\), allora c’è comunque una differenza di potenziale. Quindi possono contribuire a:
+
+- forza elettrostatica statica;
+- electrostatic softening;
+- capacità parassita;
+- feedthrough.
+
+Se vuoi davvero renderli “inattivi”, l’ideale sarebbe portarli allo stesso potenziale dello shuttle, cioè \(V_{DC}\), se la topologia lo consente. In quel modo la differenza di tensione è nulla e il loro effetto elettrostatico diretto si riduce molto.
+
+Se invece li lasci a 0 V, nel modello il loro effetto non è necessariamente nullo: semplicemente viene assorbito nei coefficienti efficaci:
+
+\[
+k_{eff}(V_{DC},V_T)
+\]
+
+\[
+C_p
+\]
+
+\[
+\alpha
+\]
+
+---
+
+# 20. Riassunto operativo
+
+Per il tuo caso, solo primo modo, \(V_T=0\), eccitazione gated e lettura TIA:
+
+## Modello meccanico
+
+\[
+m_{eff}\ddot x + c_{eff}\dot x + k_{eff}x = \alpha_d v_{in}(t)
+\]
+
+## Corrente di sense
+
+\[
+i_{sense}(t) \approx \alpha_s \dot x(t)
+\]
+
+## Circuito equivalente one-port
+
+\[
+C_p \parallel (L_m + R_m + C_m)
+\]
+
+con:
+
+\[
+L_m = \frac{m_{eff}}{\alpha_{eff}^2}
+\]
+
+\[
+R_m = \frac{c_{eff}}{\alpha_{eff}^2}
+\]
+
+\[
+C_m = \frac{\alpha_{eff}^2}{k_{eff}}
+\]
+
+## Valori indicativi
+
+Con ipotesi ordine-di-grandezza:
+
+\[
+f_1 \approx 416.6\ kHz
+\]
+
+\[
+Q_1 \approx 2800\div3300
+\]
+
+\[
+m_{eff}\approx 1\times10^{-10}\ kg
+\]
+
+\[
+k_{eff}\approx 600\div900\ N/m
+\]
+
+\[
+c_{eff}\approx 8\times10^{-8}\div1\times10^{-7}\ Ns/m
+\]
+
+\[
+C_p \approx 0.1\div1.5\ pF
+\]
+
+Il ramo motional può essere, a seconda del coupling elettrico:
+
+\[
+L_m \sim 10^2 \div 10^4\ H
+\]
+
+\[
+R_m \sim 10^4 \div 10^7\ \Omega
+\]
+
+\[
+C_m \sim 10^{-19} \div 10^{-15}\ F
+\]
+
+Valori enormi/piccolissimi sono normali: non sono componenti fisici reali, ma parametri equivalenti del modo meccanico riflesso elettricamente.
+
+---
+
+# 21. Formula pratica finale da usare
+
+Se misuri:
+
+- \(f_1\);
+- \(Q_1\);
+- \(C_p\);
+- corrente motazionale a risonanza;
+- \(V_{ac}\);
+
+allora:
+
+\[
+\omega_1 = 2\pi f_1
+\]
+
+\[
+R_m = \frac{V_{ac}}{I_{mot}}
+\]
+
+\[
+L_m = \frac{Q_1 R_m}{\omega_1}
+\]
+
+\[
+C_m = \frac{1}{\omega_1 R_m Q_1}
+\]
+
+\[
+C_p \approx \frac{\operatorname{Im}(Y_{off-resonance})}{\omega}
+\]
+
+Questo è il modo più robusto per ottenere il tuo modello RLC senza dover conoscere perfettamente geometria, aree e normalizzazione modale.
+
+---
+
+# 22. Conclusione breve
+
+Il MEMS non è “davvero” un RLC elettrico. È un risonatore meccanico capacitivo. Però, se linearizzi attorno a un punto di lavoro con \(V_{DC}\), il primo modo si comporta come:
+
+\[
+m\ddot x + c\dot x + kx = \alpha v_{in}
+\]
+
+La corrente letta è:
+
+\[
+i \propto V_{DC}\dot x
+\]
+
+Elettricamente, questo si rappresenta con:
+
+\[
+C_p \parallel (L_m-R_m-C_m)
+\]
+
+dove:
+
+- \(C_p\) è la capacità statica/parassita tra i nodi elettrici;
+- \(L_m\) rappresenta l’inerzia meccanica;
+- \(C_m\) rappresenta la compliance meccanica;
+- \(R_m\) rappresenta lo smorzamento meccanico.
+
+Il secondo modo lo ignori ponendo \(q_2=0\), ma resta valido solo se non attivi la 1:2 internal resonance. Se vedi due picchi, beats o frequency comb, il modello a un solo modo non basta più.
+
+### USER
+Non ho capito cosa dovrebbe rappresentare u(x,t), è un "campo"? Ce mi dice come si sposta nel tempo il MEMS? Ce e phi1(x) che viene moltiplicato per q1(t) ce phi mi dice ecco sostanzialmente è un termine che mi dice che mi sposta ma che cosa ce capisci cosa intendo???? Ce non è che è un "punto", è un corpo con una sua formula no ce capisci? ce sostanizalmente phi(x) descrive la forma nello spazio cioè tipo la struttura e come varia nel tempo è mostrato da q1(t)?
+
+beta1(q1) non ho cpaito ce approssimi a w01^2q1 ce ma perchè nel senso cos'è beta cosa rappresenta e qual è la sua formla originaria ce capisci cos aintendo. 
+
+Perchè w01 è la radice di C1(1) ce cosa sarebbe questo coefficiente ce da dove salta fuori cos'è
+
+ce mi devi far capire ce non buttare le cose li ce perhcè io so poche cose sui mems in generale.
+
+
+quando mi dici fDD(q1,0) allora prima di tutto..... ce sarebbe una forza elettrostatica??? c'è scrittta nel paper? ma in che senso Vdc causa deflessione statica e fdd rigidezza meccanica ce quindi q1 modifica digitdezza meccanica ce..io sono un elettronico...che cos'è la rigidezza meccanica ce capisci? non so cosa sia, e cosa intendo per deflessione statica.
+
+Non ho capito   
+DD(1)​(q1​,0)≈fDD,0(1)​+fDD,1(1)​q1​
+
+fDA(1)(q1,0)≈fDA,0(1)fDA(1)​(q1​,0)≈fDA,0(1)​ ce cosa hai linearizzato non ho capito ce cos'è fda e fdd ce capisci non capisco ce cos'è fdd,0 e fdd,1 ce perchè scomponi...
+
+
+Scusa perchè Fe usi circa/prop a 1/2 V(t)^2 dC/dx ce da dove salta fuori e perchè è un circa/proporiznale? 
+
+
+### ASSISTANT
+Perfetto, ora ho capito esattamente cosa ti serve. Ti spiego tutto da zero, con analogie elettroniche perché sei un elettronico e così capisci al volo. Andiamo con ordine.
+
+---
+
+## 1. Cosa è $u(x,t)$ e cosa è $\psi_1(x)$
+
+### Il concetto di "campo"
+
+$u(x,t)$ è un **campo di spostamento**, esattamente come il campo elettrico $E(x,y,z,t)$ è un campo.
+
+- $E(x,y,z,t)$ ti dice: "in questo punto dello spazio $(x,y,z)$, a questo istante $t$, il campo elettrico vale tot"
+- $u(x,t)$ ti dice: "in questo punto della struttura (posizione $x$ lungo il beam), a questo istante $t$, il materiale si è spostato di tot rispetto alla posizione di riposo"
+
+Quindi $u(x,t)$ è una **funzione matematica** che descrive completamente come si deforma l'intera struttura nel tempo. Non è un singolo punto: è l'insieme di tutti gli spostamenti di tutti i punti della struttura.
+
+### La forma modale $\psi_1(x)$
+
+Quando una struttura vibra in un modo specifico (es. il primo modo flessionale), non si muove a caso. Assume una **forma precisa** che è determinata dalla geometria e dai vincoli.
+
+$\psi_1(x)$ è proprio questa forma: è una funzione che ti dice "quanto si sposta il punto $x$ quando la struttura vibra nel primo modo, normalizzato a un'ampiezza unitaria".
+
+**Esempio pratico**: immagina una corda di chitarra fissata ai due estremi.
+- Quando vibra nella fondamentale, assume una forma sinusoidale: si sposta tanto al centro, zero agli estremi
+- $\psi_1(x)$ è proprio quella sinusoide
+- $x$ è la posizione lungo la corda (da 0 a L)
+- $\psi_1(x) = \sin(\pi x / L)$
+
+### L'ampiezza modale $q_1(t)$
+
+$q_1(t)$ è un **singolo numero** (una funzione del tempo) che ti dice "quanto è grande l'oscillazione in questo momento".
+
+Quindi l'approssimazione:
+$$u(x,t) \approx \psi_1(x) \cdot q_1(t)$$
+
+significa:
+- **La forma spaziale è fissa**: è data da $\psi_1(x)$ (la sinusoide, nel caso della corda)
+- **L'ampiezza oscilla nel tempo**: è data da $q_1(t)$ (che può essere $A\cos(\omega t)$)
+
+**Analogia elettronica**: è come scrivere un segnale modulato:
+$$v(x,t) = \underbrace{\phi(x)}_{\text{forma spaziale}} \cdot \underbrace{A(t)}_{\text{ampiezza temporale}}$$
+
+Nel MEMS, invece di avere un segnale che varia lungo una linea di trasmissione, hai uno spostamento meccanico che varia lungo la struttura.
+
+---
+
+## 2. Cosa è $\beta_1(q_1)$ e perché si approssima a $\omega_{01}^2 q_1$
+
+### La formula originaria
+
+Nel paper, Eq. (8):
+$$M\ddot{q}_i + M\beta_i(q) = F_i(q)$$
+
+$\beta_1(q_1)$ è la **forza elastica generalizzata** del primo modo. In pratica, è la funzione che ti dice quanta forza di richiamo elastica c'è quando la struttura è spostata di $q_1$.
+
+La formula completa (dal paper, Eq. 5) è un **polinomio cubico**:
+$$\beta_1(q_1,q_2) = c_1^{(1)} q_1 + c_2^{(1)} q_2 + c_3^{(1)} q_1^2 + c_4^{(1)} q_1 q_2 + c_5^{(1)} q_2^2 + c_6^{(1)} q_1^3 + \dots$$
+
+Dove i coefficienti $c_j^{(1)}$ sono calcolati con simulazioni FEM e raccolti nella Tabella 1 del paper.
+
+### Perché si approssima a $\omega_{01}^2 q_1$
+
+Per **piccoli spostamenti** (regime lineare), i termini quadratici e cubici sono trascurabili. Se inoltre ignori il secondo modo ($q_2 = 0$), resta solo:
+$$\beta_1(q_1) \approx c_1^{(1)} q_1$$
+
+Ora, per un oscillatore armonico lineare, l'equazione è:
+$$\ddot{q}_1 + \omega_{01}^2 q_1 = 0$$
+
+Confrontando con:
+$$\ddot{q}_1 + \beta_1(q_1) = 0 \quad \Rightarrow \quad \ddot{q}_1 + c_1^{(1)} q_1 = 0$$
+
+capisci subito che:
+$$\omega_{01}^2 = c_1^{(1)}$$
+
+### Da dove salta fuori $c_1^{(1)}$
+
+$c_1^{(1)}$ è il **coefficiente di rigidezza lineare** del primo modo. Viene calcolato con simulazioni FEM applicando forze statiche e misurando gli spostamenti risultanti.
+
+Nel paper, Tabella 1:
+$$c_1^{(1)} \approx 6.85 \, \mu m/\mu s^2$$
+
+Quindi:
+$$\omega_{01} = \sqrt{6.85} \approx 2.62 \, \mu s^{-1} = 2.62 \times 10^6 \, rad/s$$
+
+$$f_{01} = \frac{\omega_{01}}{2\pi} \approx 416 \, kHz$$
+
+**Analogia elettronica**: $c_1^{(1)}$ è come l'inverso di una capacità in un circuito LC. La frequenza di risonanza è $\omega_0 = 1/\sqrt{LC}$. Qui, con massa normalizzata a 1, $\omega_0 = \sqrt{k/m} = \sqrt{c_1^{(1)}}$.
+
+---
+
+## 3. Cosa è $f_{DD}^{(1)}(q_1,0)$ e perché $V_{DC}$ causa deflessione statica
+
+### Sì, è una forza elettrostatica
+
+$f_{DD}^{(1)}(q_1,0)$ è il **fattore di partecipazione della forza elettrostatica** proiettato sul primo modo. La notazione significa:
+
+- $f$: funzione di forza
+- $DD$: "Drive-Drive" (interazione tra il drive electrode e se stesso, cioè l'effetto della tensione DC sul drive)
+- $(1)$: primo modo
+- $(q_1,0)$: funzione di $q_1$, con $q_2 = 0$
+
+Nel paper, Eq. (13):
+$$F_i(q) = f_{DD}^{(i)}(q) V_{DC}^2 + f_{TT}^{(i)}(q) V_T^2 + 2f_{DT}^{(i)}(q) V_{DC} V_T + 2f_{DA}^{(i)}(q) V_{DC} V_{AC} \sin(\omega t)$$
+
+Quindi sì, $f_{DD}^{(1)}(q_1,0) V_{DC}^2$ è proprio il termine di forza elettrostatica dovuta alla tensione DC.
+
+### Cosa è la "deflessione statica"
+
+**Deflessione statica** = spostamento della struttura quando applichi una tensione costante (DC).
+
+Quando applichi $V_{DC}$ tra il risonatore e gli elettrodi fissi, si crea una forza elettrostatica attrattiva. Questa forza sposta la struttura fino a una **nuova posizione di equilibrio** dove:
+$$\text{Forza elastica di richiamo} = \text{Forza elettrostatica}$$
+
+**Esempio pratico**: immagina due piastre di un condensatore, una fissa e una mobile attaccata a una molla.
+- A riposo (tensione 0), la distanza è $g_0$
+- Applichi $V_{DC}$: le piastre si attraggono, la molla si comprime, la distanza diventa $g_0 - x_0$
+- $x_0$ è la **deflessione statica**
+
+### Cosa è la "rigidezza meccanica" (spiegato a un elettronico)
+
+La **rigidezza meccanica** $k$ è l'equivalente meccanico della **resistenza** $R$ o dell'**impedenza** $Z$.
+
+| Meccanica | Elettronica |
+|-----------|-------------|
+| Forza $F$ | Tensione $V$ |
+| Spostamento $x$ | Carica $Q$ |
+| Velocità $\dot{x}$ | Corrente $I$ |
+| Rigidezza $k = F/x$ | Elastanza $1/C = V/Q$ |
+| Massa $m$ | Induttanza $L$ |
+| Smorzamento $c$ | Resistenza $R$ |
+
+Per una molla lineare:
+$$F = k \cdot x$$
+
+Per un condensatore:
+$$V = \frac{1}{C} \cdot Q$$
+
+Quindi la rigidezza $k$ è come l'**elastanza** $1/C$ (l'inverso della capacità).
+
+Una molla **rigida** (k grande) richiede molta forza per spostarsi poco $\leftrightarrow$ un condensatore **piccolo** (C piccolo) richiede molta tensione per accumulare poca carica.
+
+### Cosa è l'electrostatic softening
+
+Quando applichi $V_{DC}$, la forza elettrostatica dipende dalla posizione (perché dipende dal gap). Questa dipendenza modifica la **rigidezza efficace** del sistema.
+
+Matematicamente, la forza elettrostatica è:
+$$F_e(x) \propto \frac{V_{DC}^2}{(g_0 - x)^2}$$
+
+Se linearizzi attorno alla posizione di equilibrio $x_0$:
+$$F_e(x) \approx F_e(x_0) + \left.\frac{dF_e}{dx}\right|_{x_0} (x - x_0)$$
+
+Il primo termine $F_e(x_0)$ è la forza costante che causa la deflessione statica.
+
+Il secondo termine è proporzionale a $(x - x_0)$, quindi si comporta come una **molla aggiuntiva**. Ma la derivata $\frac{dF_e}{dx}$ è **positiva** (la forza aumenta quando il gap diminuisce), quindi questa "molla aggiuntiva" è **negativa**: riduce la rigidezza totale.
+
+Questo fenomeno si chiama **electrostatic softening**: la tensione DC riduce la rigidezza efficace, quindi riduce la frequenza di risonanza.
+
+**Analogia elettronica**: è come se aggiungessi una **capacità negativa** in parallelo a un circuito LC. La capacità totale aumenta, quindi la frequenza di risonanza diminuisce ($\omega_0 = 1/\sqrt{LC}$).
+
+---
+
+## 4. La linearizzazione: cosa sono $f_{DD,0}$, $f_{DD,1}$, $f_{DA,0}$
+
+### Sviluppo in serie di Taylor
+
+Quando scrivo:
+$$f_{DD}^{(1)}(q_1,0) \approx f_{DD,0}^{(1)} + f_{DD,1}^{(1)} q_1$$
+
+sto facendo uno **sviluppo in serie di Taylor al primo ordine** attorno a $q_1 = 0$ (posizione di equilibrio).
+
+Questo è esattamente quello che fai in elettronica quando linearizzi un componente non lineare attorno al punto di lavoro.
+
+**Analogia elettronica**: linearizzazione di un diodo.
+
+La caratteristica del diodo è:
+$$I_D(V_D) = I_S \left(e^{V_D/V_T} - 1\right)$$
+
+Se polarizzi il diodo a $V_{D0}$ (punto di lavoro), la corrente è $I_{D0} = I_D(V_{D0})$.
+
+Per piccoli segnali $v_d$ attorno a $V_{D0}$:
+$$I_D(V_{D0} + v_d) \approx I_{D0} + g_m \cdot v_d$$
+
+dove:
+- $I_{D0}$ è la corrente di bias (termine costante)
+- $g_m = \left.\frac{dI_D}{dV_D}\right|_{V_{D0}}$ è la transconduttanza (derivata prima)
+
+### Applicazione al MEMS
+
+Allo stesso modo:
+$$f_{DD}^{(1)}(q_1,0) \approx \underbrace{f_{DD,0}^{(1)}}_{\text{valore a } q_1=0} + \underbrace{f_{DD,1}^{(1)}}_{\text{derivata}} \cdot q_1$$
+
+- $f_{DD,0}^{(1)}$ è il valore della funzione a $q_1 = 0$. Moltiplicato per $V_{DC}^2$, dà la **forza costante** che causa la deflessione statica.
+- $f_{DD,1}^{(1)}$ è la derivata $\frac{\partial f_{DD}^{(1)}}{\partial q_1}$ valutata in $q_1 = 0$. Moltiplicato per $V_{DC}^2 \cdot q_1$, dà una forza proporzionale allo spostamento, quindi modifica la **rigidezza efficace** (electrostatic softening).
+
+### Perché $f_{DA}^{(1)}$ si approssima a costante
+
+Per $f_{DA}^{(1)}(q_1,0)$, si fa un'approssimazione ancora più semplice (ordine zero):
+$$f_{DA}^{(1)}(q_1,0) \approx f_{DA,0}^{(1)}$$
+
+Questo perché $f_{DA}$ è il coefficiente del termine di eccitazione $2 V_{DC} V_{AC} \sin(\omega t)$. Se $V_{AC}$ è piccolo, l'oscillazione $q_1$ è piccola, e la variazione di $f_{DA}$ con $q_1$ è trascurabile.
+
+**Analogia elettronica**: è come dire che in un amplificatore a BJT, per piccoli segnali, la transconduttanza $g_m$ è costante e non dipende dal segnale di ingresso.
+
+---
+
+## 5. La formula della forza elettrostatica: $F_e \propto \frac{1}{2} V^2 \frac{dC}{dx}$
+
+### Da dove salta fuori
+
+Questa formula viene dall'**energia immagazzinata in un condensatore**.
+
+L'energia elettrostatica in un condensatore è:
+$$E = \frac{1}{2} C V^2$$
+
+In meccanica, la **forza** è la derivata dell'energia rispetto alla posizione:
+$$F = \frac{dE}{dx}$$
+
+Quindi:
+$$F = \frac{d}{dx} \left(\frac{1}{2} C(x) V^2\right) = \frac{1}{2} V^2 \frac{dC}{dx}$$
+
+(assumendo $V$ costante, cioè il condensatore è collegato a un generatore di tensione ideale).
+
+### Perché è "circa/proporzionale"
+
+È un'**approssimazione** perché assume che il condensatore sia a **piastre parallele ideali**, cioè:
+- Campo elettrico uniforme
+- Effetti di bordo (fringing fields) trascurabili
+
+Per un condensatore a piastre parallele:
+$$C(x) = \frac{\varepsilon_0 A}{g_0 - x}$$
+
+dove:
+- $A$ = area delle piastre
+- $g_0$ = gap a riposo
+- $x$ = spostamento della piastra mobile
+
+Quindi:
+$$\frac{dC}{dx} = \frac{\varepsilon_0 A}{(g_0 - x)^2}$$
+
+E la forza è:
+$$F_e = \frac{1}{2} V^2 \frac{\varepsilon_0 A}{(g_0 - x)^2}$$
+
+Questa è la formula esatta per piastre parallele ideali. Nel MEMS reale, la geometria è più complessa (beam curvi, elettrodi laterali, effetti 3D), quindi $\frac{dC}{dx}$ si calcola con simulazioni FEM/BEM, ma il concetto fisico resta lo stesso.
+
+### Analogia elettronica
+
+Pensa a un **varactor** (diodo a capacità variabile). La capacità dipende dalla tensione inversa $V_R$:
+$$C(V_R) = \frac{C_0}{(1 + V_R/V_0)^n}$$
+
+Se applichi una tensione, c'è una forza elettrostatica che tende a modificare la giunzione. Nel MEMS, questa forza è abbastanza grande da spostare fisicamente la struttura.
+
+---
+
+## Riassunto finale
+
+| Concetto | Significato fisico | Analogia elettronica |
+|----------|-------------------|---------------------|
+| $u(x,t)$ | Spostamento di ogni punto della struttura nel tempo | Segnale $v(x,t)$ su una linea di trasmissione |
+| $\psi_1(x)$ | Forma spaziale del primo modo di vibrazione | Forma d'onda normalizzata $\phi(x)$ |
+| $q_1(t)$ | Ampiezza temporale dell'oscillazione | Ampiezza $A(t)$ del segnale |
+| $\beta_1(q_1)$ | Forza elastica di richiamo (rigidezza non lineare) | Relazione $V = f(Q)$ di un componente |
+| $c_1^{(1)}$ | Coefficiente di rigidezza lineare | Elastanza $1/C$ |
+| $f_{DD}^{(1)}$ | Fattore di forza elettrostatica DC | Coefficiente di accoppiamento |
+| Deflessione statica | Spostamento di equilibrio dovuto a $V_{DC}$ | Punto di lavoro (bias) $V_{D0}$, $I_{D0}$ |
+| Rigidezza $k$ | $F/x$, resistenza allo spostamento | Elastanza $1/C = V/Q$ |
+| Softening | Riduzione di $k$ dovuta a $V_{DC}$ | Aggiunta di capacità negativa |
+| $f_{DD,0}$ | Termine costante (deflessione) | Corrente di bias $I_{D0}$ |
+| $f_{DD,1}$ | Derivata (modifica rigidezza) | Transconduttanza $g_m$ |
+| $F_e = \frac{1}{2} V^2 \frac{dC}{dx}$ | Forza elettrostatica da energia capacitiva | Forza su dielettrico in condensatore |
+
+### USER
+Ma fdd sta per ce forza elettrostatica tra le armature della cpaacità di drive, fda invece ce drive-? ce tipo sense tuning ecc... però tipo è sense e drive? perchè A?
+
+### ASSISTANT
+No, **DD non vuol dire “drive–drive”** e **A non è il sense**.
+
+Nel paper la notazione è legata alle **tensioni** applicate, non direttamente ai nomi degli elettrodi.
+
+Hanno questi potenziali:
+
+| Conduttore | Potenziale | Lettera usata |
+|---|---:|---|
+| resonator + dummy | \(V_{DC}\) | **D** = DC |
+| tuning electrodes | \(V_T\) | **T** = Tuning |
+| drive electrodes | \(V_{AC}\sin\omega t\) | **A** = AC |
+| sense electrodes | \(0\) | sense, ma non entra nella forza perché è a 0 V |
+
+Quindi:
+
+\[
+\Phi_1=\Phi_5=V_{DC}
+\]
+
+\[
+\Phi_2=V_T
+\]
+
+\[
+\Phi_3=V_{AC}\sin\omega t
+\]
+
+\[
+\Phi_4=0
+\]
+
+---
+
+## Cosa sono \(f_{DD}\), \(f_{DA}\), \(f_{DT}\), \(f_{TT}\)
+
+La forza elettrostatica generalizzata sul modo \(i\), Eq. (12)-(13) del paper, nasce da termini del tipo:
+
+\[
+\Phi_m \Phi_n
+\]
+
+cioè prodotti tra tensioni applicate ai conduttori.
+
+Raggruppando i prodotti di tensione, ottengono:
+
+\[
+F_i(q)
+=
+f_{DD}^{(i)}(q)V_{DC}^2
++
+f_{TT}^{(i)}(q)V_T^2
++
+2f_{DT}^{(i)}(q)V_{DC}V_T
++
+2f_{DA}^{(i)}(q)V_{DC}V_{AC}\sin\omega t
+\]
+
+Quindi:
+
+| Simbolo | Significato | Termine di tensione |
+|---|---|---|
+| \(f_{DD}\) | coefficiente legato al bias DC | \(V_{DC}^2\) |
+| \(f_{TT}\) | coefficiente legato al tuning | \(V_T^2\) |
+| \(f_{DT}\) | coefficiente misto DC–Tuning | \(2V_{DC}V_T\) |
+| \(f_{DA}\) | coefficiente misto DC–AC | \(2V_{DC}V_{AC}\sin\omega t\) |
+
+---
+
+## Quindi \(f_{DD}\) cosa rappresenta?
+
+\(f_{DD}\) **non è semplicemente la forza tra le armature della capacità di drive**.
+
+È un **coefficiente di forza elettrostatica generalizzata** relativo al termine \(V_{DC}^2\).
+
+Cioè: quando applichi il bias continuo \(V_{DC}\), si genera un campo elettrostatico statico. Questo produce:
+
+1. una forza costante, che causa la **deflessione statica**;
+2. una dipendenza della forza dalla posizione, che modifica la rigidezza efficace, cioè fa **electrostatic softening**.
+
+Nell’equazione del primo modo, il termine:
+
+\[
+f_{DD}^{(1)}(q_1,0)V_{DC}^2
+\]
+
+è proprio quello legato al solo bias DC.
+
+Se lo linearizzi:
+
+\[
+f_{DD}^{(1)}(q_1,0)
+\approx
+f_{DD,0}^{(1)}
++
+f_{DD,1}^{(1)}q_1
+\]
+
+allora:
+
+- \(f_{DD,0}^{(1)}V_{DC}^2\) è la parte costante → deflessione statica;
+- \(f_{DD,1}^{(1)}V_{DC}^2 q_1\) è la parte proporzionale a \(q_1\) → modifica la rigidezza, quindi softening.
+
+---
+
+## \(f_{DA}\): perché A?
+
+Perché **A sta per AC**, cioè il segnale alternato:
+
+\[
+V_{AC}\sin\omega t
+\]
+
+applicato ai **drive electrodes**.
+
+Quindi:
+
+\[
+f_{DA}
+\]
+
+va letto come:
+
+\[
+\text{D} = DC
+\qquad
+\text{A} = AC
+\]
+
+cioè termine misto **DC–AC**.
+
+Infatti il termine di forzamento dinamico è:
+
+\[
+2f_{DA}^{(1)}(q_1,0)V_{DC}V_{AC}\sin\omega t
+\]
+
+Questo è il termine che eccita il risonatore alla frequenza del segnale AC.
+
+Quindi:
+
+- **D** = bias continuo, \(V_{DC}\);
+- **A** = segnale alternato di drive, \(V_{AC}\sin\omega t\);
+- **T** = tuning, \(V_T\).
+
+---
+
+## Il sense dove entra?
+
+Il sense **non entra nella forza elettrostatica**, perché nel paper i sense electrodes sono a massa:
+
+\[
+\Phi_4 = 0
+\]
+
+Se una tensione è zero, i prodotti \(\Phi_m\Phi_n\) che la coinvolgono sono zero. Quindi il sense non contribuisce alla forza.
+
+Però il sense entra nella **lettura**, cioè nella current equation, Eq. (15):
+
+\[
+I(q)
+=
+\sum_{i=1}^{2}
+f_{DA}^{(i)}(q)
+V_{DC}
+\dot q_i
+\]
+
+Questa equazione dice:
+
+> la corrente che esce dai sense electrodes è proporzionale alla velocità modale \(\dot q_i\) e al bias \(V_{DC}\).
+
+Qui \(f_{DA}\) rappresenta il coefficiente di **trasduzione elettromeccanica in lettura**.
+
+Attenzione però: nella forza, \(f_{DA}\) è legata al prodotto \(V_{DC}V_{AC}\), quindi all’attuazione. Nella corrente, lo stesso tipo di coefficiente indica la conversione movimento → corrente sotto bias DC.
+
+---
+
+## Riassunto veloce
+
+\[
+f_{DD}
+\]
+
+significa:
+
+\[
+\boxed{\text{termine elettrostatico proporzionale a } V_{DC}^2}
+\]
+
+Non è “drive–drive”. È DC–DC.
+
+\[
+f_{DA}
+\]
+
+significa:
+
+\[
+\boxed{\text{termine elettrostatico misto DC–AC}}
+\]
+
+A sta per **AC**, cioè il segnale applicato ai drive electrodes.
+
+\[
+f_{DT}
+\]
+
+significa:
+
+\[
+\boxed{\text{termine misto DC–Tuning}}
+\]
+
+\[
+f_{TT}
+\]
+
+significa:
+
+\[
+\boxed{\text{termine legato solo al Tuning}}
+\]
+
+Il sense, essendo a 0 V, non compare nella forza, ma compare nella corrente di uscita.

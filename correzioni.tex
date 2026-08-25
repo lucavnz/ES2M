@@ -1,0 +1,154 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath, amsfonts, amssymb, amsthm, mathtools}
+\usepackage{geometry}
+\geometry{margin=2.0cm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\usepackage[american]{circuitikz}
+\usepackage{cancel}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+
+\tikzset{
+    block/.style = {draw, fill=blue!5, rectangle, minimum height=2.5em, minimum width=3.5em, align=center, rounded corners=2pt},
+    sum/.style   = {draw, fill=blue!5, circle, minimum size=1.5em, inner sep=0pt},
+    input/.style = {coordinate},
+    output/.style= {coordinate}
+}
+
+\hypersetup{colorlinks=true,linkcolor=blue!70!black,citecolor=blue!70!black,urlcolor=blue!70!black}
+
+\newtcolorbox{notebox}[1][]{colback=orange!5!white,colframe=orange!75!black,fonttitle=\bfseries,title=#1}
+\newtcolorbox{unitbox}[1][]{colback=green!5!white,colframe=green!60!black,fonttitle=\bfseries,title=#1}
+\newtcolorbox{warnbox}[1][]{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,title=#1}
+\newtcolorbox{corrbox}[1][]{colback=blue!5!white,colframe=blue!70!black,fonttitle=\bfseries,title=#1}
+
+\title{\textbf{\Large Modellizzazione Elettromeccanica e Soppressione Attiva del Ringdown}\\
+\large Compendio degli Appunti con Correzioni Critiche}
+\author{\textbf{Documentazione Tecnica ES2M -- Rev.\ corretta}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section*{Guida rapida alle correzioni (leggere prima di tutto)}
+\addcontentsline{toc}{section}{Guida rapida alle correzioni}
+\begin{enumerate}
+  \item \textbf{Segno del softening}: ovunque compariva $\left(c_{1,\beta}^{(1)}+c_{1,DD}^{(1)}V_{DC}^2\right)$ va scritto $\left(c_{1,\beta}^{(1)}-c_{1,DD}^{(1)}V_{DC}^2\right)$ (molla negativa; paper Eq.~(17),(22)).
+  \item \textbf{$F_C$}: non \`e $9.72\times10^{-3}$ N. \`E un'accelerazione modale $\approx8.5\times10^{-4}V_{DC}^2\ \mu\mathrm{m}/\mu\mathrm{s}^2$; produce un offset $q_{OS}\sim0.12\,\mathrm{nm}\cdot V_{DC}^2$, ininfluente in AC.
+  \item \textbf{$t_d$}: corretto $\approx4.9$ ms, non 4.6.
+  \item \textbf{Guadagno $A$}: il ``$10^{12}$'' \`e un artefatto di unit\`a (massa modale letta come 1 kg + coefficiente non convertito). Conto corretto via osservabile: $A_{\tau/2}\approx36$, $A_{\tau/10}\approx320$.
+  \item \textbf{Spia virtuale}: $C_r\approx146$ pF e $R_r\approx0.93\ \Omega$ (con $L_r=1$ mH), non 60.85 pF / 10 $\Omega$.
+  \item \textbf{Massa efficace}: introdotta \emph{solo} come strumento di conversione in SI (Sez.~\ref{sec:massa}); non fa parte del modello modale ($M=1$).
+\end{enumerate}
+
+\section{Modello Dinamico e Linearizzazione}
+\subsection{Equazione fondamentale (corretta nel segno)}
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1}\dot{q}_1
+    + \left(c_{1,\beta}^{(1)} \,\textcolor{red}{-}\, c_{1,DD}^{(1)}V_{DC}^2\right) q_1
+    = F_C + 2c_{1,DA}^{(1)} q_1 v_{in} + 2c_{0,DA}^{(1)}V_{DC}v_{in}
+    \label{eq:moto}
+\end{equation}
+\begin{corrbox}[Correzione 1 -- segno]
+Nel documento originale Eq.~(1)/(4) il softening compariva con $+$. Il paper (Eq.~17, 22) d\`a $\omega_1^2=c_1^{(1)}-c_{1,DD}^{(1)}V_{DC}^2$: la forza elettrostatica cresce al diminuire del gap, quindi il suo contributo incrementale \emph{asseconda} lo spostamento = rigidezza negativa.
+\end{corrbox}
+
+\subsection{Forza costante $F_C$ (corretta)}
+\begin{equation}
+    F_C = c_{0,DD}^{(1)}V_{DC}^2 - c_{0,\beta}^{(1)}
+    \;\approx\; 8.5\times10^{-4}\,V_{DC}^2\ \tfrac{\mu\mathrm{m}}{\mu\mathrm{s}^2}
+\end{equation}
+\begin{corrbox}[Correzione 2 -- valore e significato di $F_C$]
+Il ``$9.72\times10^{-3}$ N'' nasce sommando grandezze con unit\`a incompatibili. In unit\`a del paper $c_{0,DD}^{(1)}=96.08\varepsilon_0\approx8.5\times10^{-4}$ (accelerazione per V$^2$) e $c_{0,\beta}^{(1)}=-9.72\times10^{-9}$ \`e trascurabile. L'offset risultante $q_{OS}=F_C/k\sim1.2\times10^{-4}V_{DC}^2\ \mu$m ($\sim3$ nm a 5 V) si assorbe nel re-centering $x=q_1-q_{OS}$; poich\'e la lettura \`e $\propto\dot q_1$, $F_C$ non produce alcuna corrente in AC.
+\end{corrbox}
+
+\subsection{Linearizzazione}
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1}\dot{q}_1 + k\,q_1 = 2c_{0,DA}^{(1)}V_{DC}\,v_{in}(t),
+    \qquad k \equiv c_{1,\beta}^{(1)} - c_{1,DD}^{(1)}V_{DC}^2
+\end{equation}
+avendo eliso $F_C$ (re-centering) e $2c_{1,DA}q_1v_{in}$ (prodotto di coseni $\to$ DC$+2\omega$, nessuna componente a $\omega$).
+
+\section{Funzione di Trasferimento, Retroazione e \emph{perch\'e serve la massa}}
+\subsection{TF (invariata)}
+\begin{equation}
+    \frac{U_1}{V_{in}}=\frac{2c_{0,DA}^{(1)}V_{DC}}{s+\frac{\omega_{01}}{Q_1}+\frac{k}{s}},
+    \qquad
+    \frac{I_S}{V_{in}}=\frac{2\left(c_{0,DA}^{(1)}V_{DC}\right)^2}{s+\frac{\omega_{01}}{Q_1}+\frac{k}{s}}
+\end{equation}
+
+\subsection{Equazione retroazionata e $\mu'$ (struttura corretta)}
+Con $v_{in}=-AV_0=-AG_e\,c_{0,DA}^{(1)}V_{DC}\dot q_1$:
+\begin{equation}
+    \mu'=-\frac12\left[\frac{\omega_{01}}{Q_1}+A G_e\,2\left(c_{0,DA}^{(1)}V_{DC}\right)^2\right]
+    \label{eq:mu}
+\end{equation}
+\begin{warnbox}[Attenzione: omogeneit\`a dimensionale]
+L'Eq.~\eqref{eq:mu} \`e omogenea \emph{solo in unit\`a coerenti}. Il termine $AG_e(c_{0,DA}V_{DC})^2$ ha dimensioni kg/s se $c_{0,DA}$ \`e in SI (C/m); per ottenere s$^{-1}$ va diviso per una massa. Nel ROM $M=1$ \`e \textbf{adimensionale}: trattarlo come 1 kg \`e l'origine del falso $10^{12}$.
+\end{warnbox}
+
+\subsection{Perch\'e (e quando) serve la massa efficace}\label{sec:massa}
+Il ROM \`e un bilancio di accelerazioni ($M=1$): nessun kg compare in TF, RLC, $C_p$, $Y_{res}$. La massa $m_{eff}\sim10^{-10}$ kg serve \emph{solo} per convertire in SI:
+$c=m_{eff}\omega_{01}/Q_1$ (kg/s), forze in N, tensioni in V. Il conto del guadagno si pu\`o fare \textbf{senza} massa usando l'osservabile (indipendente da ogni normalizzazione):
+\begin{equation}
+    Y_{res}\equiv\frac{I_{res}}{V_{ac}}\Big|_{\omega_1}=\frac{\alpha_d\alpha_s}{c}
+    \approx\frac{5\,\mathrm{nA}}{0.178\,\mathrm{V}}\approx2.8\times10^{-8}\ \mathrm{S}
+    \;\Rightarrow\;
+    \frac{c_{add}}{c}=A\,G_e\,Y_{res}=0.028\,A
+\end{equation}
+\begin{corrbox}[Correzione 3 -- guadagno richiesto]
+$A_{\tau/2}=1/0.028\approx36$; $A_{\tau/10}=9/0.028\approx320$ (con $G_e=10^6$). Il ``$10^{12}$'' $=10$ ordini (massa modale letta come 1 kg) $\times\sim10^2$ (coefficiente $c_{0,DA}$ non convertito dalle unit\`a $\mu$m-$\mu$s-pF). Verifica indipendente da $\alpha$ e $m$: $v_{in}(0)=(c_{add}/c)V_{ac}\approx9\times0.178\approx1.6$ V: nessun operazionale satura; con $A=10^{12}$ servirebbero GV (assurdo \emph{a priori}).
+\end{corrbox}
+\begin{unitbox}[Verifica dimensionale corretta]
+$[\alpha]=[c_{0,DA}V_{DC}]=\mathrm{N/V}=\mathrm{C/m}$; quindi $[\alpha^2/c]=\mathrm{(C/m)^2\,s/kg}=\mathrm{S}$ e $[G_e Y_{res}]=\Omega\cdot\mathrm{S}=1$: $c_{add}/c$ \`e adimensionale, come deve essere.
+\end{unitbox}
+
+\section{Ringdown libero (corretto)}
+Radici $\lambda_{1,2}=-\frac{\omega_{01}}{2Q_1}\pm j\omega_r$, $\omega_r\simeq\sqrt{c_{1,\beta}^{(1)}-c_{1,DD}^{(1)}V_{DC}^2}\approx2.61\times10^6$ rad/s. Tempo per attenuare $\times10$:
+\begin{equation}
+    t_d=\ln(10)\frac{2Q_1}{\omega_{01}}
+    \approx2.303\times2.14\times10^{-3}\,\mathrm{s}
+    \approx\textcolor{green!50!black}{4.9\ \mathrm{ms}}
+\end{equation}
+\begin{corrbox}[Correzione 4] $2Q/\omega=5600/2.618\times10^6=2.14$ ms; $\times2.303=4.9$ ms (il 4.6 ms era un errore aritmetico). \end{corrbox}
+
+\section{Spia Virtuale RLC (dimensionamento corretto)}
+Vincoli $f_{ref}=416$ kHz, $Q_{ref}=2800$. Con $L_r=1$ mH:
+\begin{align}
+    C_r&=\frac{1}{\omega_{01}^2L_r}=\frac{1}{6.85\times10^{12}\times10^{-3}}
+    \approx\textcolor{green!50!black}{146\ \mathrm{pF}}\\
+    R_r&=\frac{1}{Q_1}\sqrt{\frac{L_r}{C_r}}=\frac{\omega_{01}L_r}{Q_1}
+    =\frac{2.618\times10^{6}\times10^{-3}}{2800}
+    \approx\textcolor{green!50!black}{0.93\ \Omega}
+\end{align}
+\begin{corrbox}[Correzione 5 -- valori e trade-off progettuale]
+I valori 60.85 pF / 10 $\Omega$ non soddisfano le equazioni di progetto. Usare $R_r=\omega_0 L/Q$: cresce con $L$, ma allora $C_r$ diventa piccola (parassite) e la DCR dell'induttore \`e comparabile con $R_r$ (un induttore reale da 1 mH a 416 kHz ha gi\`a diversi $\Omega$ di serie): \`e questa, non il calcolo, la vera delicatezza della spia. Servono trimmer e/o scelta di $L$ con DCR $\ll R_r$.
+\end{corrbox}
+Mappatura invariata: $v_C\leftrightarrow q_1$, $i\leftrightarrow\dot q_1$; $V_r$ replica pulita della velocit\`a; il loop con $V_r$ non contiene $\alpha_s$ (collo di bottiglia del sensing), a differenza del loop con $V_0$.
+
+\section{Tabella sinottica corretta}
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Parametro} & \textbf{Valore corretto} & \textbf{Nota} \\ \midrule
+$k=c_{1,\beta}-c_{1,DD}V_{DC}^2$ & segno $-$ & softening (era $+$) \\
+$F_C$ & $\approx8.5\times10^{-4}V_{DC}^2\ \mu$m/$\mu$s$^2$ & non ``N''; irrilevante in AC \\
+$t_d$ & $\approx4.9$ ms & era 4.6 \\
+$A_{\tau/2}$, $A_{\tau/10}$ & $\approx36$, $\approx320$ & era $10^{12}$ (artefatto unit\`a) \\
+$v_{in}(0)$ a $\tau/10$ & $\approx1.6$ V & nessuna saturazione \\
+$C_r$ ($L_r=1$ mH) & $\approx146$ pF & era 60.85 \\
+$R_r$ ($L_r=1$ mH) & $\approx0.93\ \Omega$ & era 10; usare $R=\omega_0L/Q$ \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

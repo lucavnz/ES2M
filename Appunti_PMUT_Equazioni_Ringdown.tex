@@ -1,0 +1,529 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath, amsfonts, amssymb, amsthm, mathtools}
+\usepackage{geometry}
+\geometry{margin=2.0cm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\usepackage[american]{circuitikz}
+\usepackage{cancel}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+
+\tikzset{
+    block/.style = {draw, fill=blue!5, rectangle, minimum height=2.5em, minimum width=3.5em, align=center, rounded corners=2pt},
+    sum/.style   = {draw, fill=blue!5, circle, minimum size=1.5em, inner sep=0pt},
+    input/.style = {coordinate},
+    output/.style= {coordinate}
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
+}
+
+% Stili per box di note, verifiche e correzioni
+\newtcolorbox{notebox}[1][]{
+  colback=orange!5!white,
+  colframe=orange!75!black,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newtcolorbox{unitbox}[1][]{
+  colback=green!5!white,
+  colframe=green!60!black,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newtcolorbox{warnbox}[1][]{
+  colback=red!5!white,
+  colframe=red!75!black,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\newtcolorbox{corrbox}[1][]{
+  colback=blue!5!white,
+  colframe=blue!70!black,
+  fonttitle=\bfseries,
+  title=#1
+}
+
+\title{\textbf{\Large Modellizzazione Elettromeccanica del Risonatore MEMS ad Arco ed Analisi Comparativa delle Tecniche di Soppressione Attiva del Ringdown}\\
+\large Compendio Master Tecnico-Scientifico Completo ed Integrato con i Paper di Riferimento}
+\author{\textbf{Documentazione Tecnica ES2M -- Caratterizzazione Risonatori MEMS}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Il presente compendio costituisce una documentazione esaustiva e rigorosa relativa alla modellizzazione dinamica non lineare, alla linearizzazione attorno al punto di lavoro, alla rappresentazione circuitale equivalente ed alle strategie di soppressione attiva del decadimento libero (\emph{ringdown}) per un risonatore micro-elettro-meccanico (MEMS) capacitivo ad arco in polisilicio. Vengono analizzati in dettaglio i passaggi algebrici ed il significato fisico delle grandezze modali, risolvendo le discrepanze emerse nelle prime trascrizioni e fornendo le opportune correzioni dimensionali e numeriche. Vengono infine comparate tre strategie di soppressione del ringdown (retroazione diretta di velocità, circuito spia virtuale RLC e generazione feedforward di coda da AWG), dimostrando la fattibilità circuitale del ciclo chiuso ed analizzando i relativi limiti di stabilità e rumore.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =========================================================================
+\section*{Premessa e Bibliografia di Riferimento}
+\addcontentsline{toc}{section}{Premessa e Bibliografia di Riferimento}
+% =========================================================================
+
+Il presente documento sintetizza, sviluppa e formalizza l'intero corpus teorico e sperimentale contenuto negli appunti manoscritti (\texttt{Equazione.pdf}, \texttt{Ringdown.pdf}, \texttt{Ringdown Alt.pdf}), nelle discussioni analitiche e nelle note di laboratorio, correlando ciascun risultato alle equazioni ed ai dati misurati presenti nei quattro articoli scientifici di riferimento: Frangi et al. (2023) \cite{Frangi2023}, Nastro et al. (2026) \cite{Nastro2026}, Wu et al. (2021) \cite{Wu2021} ed il Report Sperimentale UniBS (2026) \cite{UniBS2026}.
+
+\newpage
+
+% =========================================================================
+\section{Fisica del Risonatore MEMS ed Isolamento del Primo Modo}
+% =========================================================================
+
+\subsection{Geometria e Caratteristiche Costruttive}
+Il dispositivo analizzato (descritto in \cite{Frangi2023} e \cite{UniBS2026}) è un risonatore capacitivo MEMS fabbricato in polisilicio strutturale ($\rho = 2330\text{ kg/m}^3$, modulo di Young $E = 167\text{ GPa}$). La struttura si compone di due travi (\emph{beams}) curve \emph{clamp-clamp} speculari (arch resonator) incapsulate in atmosfera controllata di Argon a bassa pressione ($\sim 70\text{ mbar}$).
+I parametri geometrici nominali sono:
+\begin{itemize}
+    \item Lunghezza rettificata delle travi: $L = 532\,\mu\text{m}$;
+    \item Sezione trasversale: $w \times h = 5\,\mu\text{m} \times 24\,\mu\text{m}$;
+    \item Gap elettrostatico a riposo: $g_0 = 1.8\,\mu\text{m}$.
+\end{itemize}
+
+\subsection{Modi di Vibrazione e Condizioni di Isolamento Modale}
+La struttura presenta due modi principali di vibrazione nel piano (\emph{in-plane}):
+\begin{itemize}
+    \item \textbf{Primo modo flessionale (antisimmetrico/simmetrico):} $f_{r1} \approx 416.6\text{ kHz} \implies \omega_{01} \approx 2.618 \cdot 10^6\text{ rad/s}$;
+    \item \textbf{Secondo modo flessionale:} $f_{r2} \approx 834.15\text{ kHz} \implies \omega_{02} \approx 5.241 \cdot 10^6\text{ rad/s}$.
+\end{itemize}
+
+Poiché la frequenza del secondo modo è quasi il doppio del primo ($f_{r2} \approx 2 f_{r1}$), per ampiezze di oscillazione elevate il sistema sviluppa un accoppiamento non lineare di tipo \emph{1:2 internal resonance} \cite{Frangi2023, Nastro2026}, che causa la nascita di bifurcazioni di Neimark-Sacker, quasi-periodicità e pettini di frequenza (\emph{frequency combs}).
+
+\begin{notebox}[Condizioni di Lavoro: Esclusione del Secondo Modo]
+Nell'ambito del presente progetto di caratterizzazione e controllo del ringdown, l'obiettivo è studiare ed applicare il controllo \textbf{esclusivamente al primo modo meccanico}. A tal fine:
+\begin{enumerate}
+    \item Il segnale di eccitazione $v_{\text{in}}(t)$ ha frequenza limitata attorno a $f_{r1} \approx 416.6\text{ kHz}$;
+    \item L'ampiezza di eccitazione $V_{\text{AC}}$ viene mantenuta sufficientemente bassa da evitare l'innesco della risonanza interna 1:2;
+    \item La coordinata modale del secondo modo viene posta identicamente nulla nel modello dinamico: $q_2(t) = 0$.
+\end{enumerate}
+\end{notebox}
+
+\subsection{Campo di Spostamento e Coordinata Modale \texorpdfstring{$q_1(t)$}{q1(t)}}
+In meccanica dei continui, lo spostamento fisico $u(x,t)$ di ciascun punto della trave in funzione della posizione $x$ e del tempo $t$ viene rappresentato mediante la separazione delle variabili modali:
+\begin{equation}
+    u(x,t) \approx \psi_1(x) q_1(t) + \psi_2(x) q_2(t) \xrightarrow{q_2=0} \psi_1(x) q_1(t)
+    \label{eq:field_displacement}
+\end{equation}
+dove:
+\begin{itemize}
+    \item $\psi_1(x)$ è la \textbf{forma modale} (\emph{mode shape}) adimensionale del primo modo, determinata dalla geometria e dai vincoli di incastro;
+    \item $q_1(t)$ è la \textbf{coordinata modale} (ampiezza temporale del primo modo).
+\end{itemize}
+Si ribadisce che $q_1(t)$ \textbf{non è una carica elettrica}, ma una coordinata meccanica espressa in micrometri ($\mu\text{m}$) o metri ($\text{m}$). Di conseguenza, $\dot{q}_1(t)$ rappresenta la velocità modale ($\mu\text{m}/\mu\text{s}$ o $\text{m/s}$) e $\ddot{q}_1(t)$ l'accelerazione modale.
+
+\newpage
+
+% =========================================================================
+\section{Modello Dinamico Non Lineare e Linearizzazione Rigorosa}
+% =========================================================================
+
+\subsection{Equazione Fondamentale del Moto (da \cite{Frangi2023}, Eq. 17)}
+L'equazione differenziale che governa l'evoluzione temporale della coordinata modale $q_1(t)$ sotto lazione della forza elastica di richiamo e delle sollecitazioni elettrostatiche è data da:
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1} \dot{q}_1 + \beta_1(q_1, 0) - f_{DD}^{(1)}(q_1, 0) V_{\text{DC}}^2 = 2 c_{0,DA}^{(1)} V_{\text{DC}} v_{\text{in}}(t) + 2 c_{1,DA}^{(1)} q_1(t) v_{\text{in}}(t)
+    \label{eq:governing_full}
+\end{equation}
+dove:
+\begin{itemize}
+    \item $\omega_{01}$ è la pulsazione naturale del primo modo;
+    \item $Q_1 \approx 2800$ è il fattore di qualità meccanico in assenza di retroazione;
+    \item $\beta_1(q_1, 0) = c_1^{(1)} q_1 + c_6^{(1)} q_1^3 + \dots$ è la forza elastica di richiamo interna (con $c_1^{(1)} \equiv c_{1,\beta}^{(1)} \approx 6.85\,\mu\text{s}^{-2}$);
+    \item $f_{DD}^{(1)}(q_1, 0)$ rappresenta il coefficiente della forza elettrostatica generata dalla tensione continua $V_{\text{DC}}$ applicata agli elettrodi di drive;
+    \item $c_{0,DA}^{(1)}$ e $c_{1,DA}^{(1)}$ sono i coefficienti di accoppiamento elettro-meccanico d'attuazione (rispettivamente diretto ed incrociato).
+\end{itemize}
+
+\subsection{Sviluppo in Serie di Taylor e Segno del Softening Elettrostatico}
+Linearizzando la forza elettrostatica $f_{DD}^{(1)}(q_1, 0)$ attorno alla posizione di riposo $q_1 = 0$:
+\begin{equation}
+    f_{DD}^{(1)}(q_1, 0) \approx c_{0,DD}^{(1)} + c_{1,DD}^{(1)} q_1
+\end{equation}
+Sostituendo nell'equazione del moto:
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1} \dot{q}_1 + c_{1,\beta}^{(1)} q_1 - \left( c_{0,DD}^{(1)} + c_{1,DD}^{(1)} q_1 \right) V_{\text{DC}}^2 = c_{0,\beta}^{(1)} + 2 c_{0,DA}^{(1)} V_{\text{DC}} v_{\text{in}} + 2 c_{1,DA}^{(1)} q_1 v_{\text{in}}
+\end{equation}
+Raccogliendo i termini proporzionali a $q_1$:
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1} \dot{q}_1 + \left( c_{1,\beta}^{(1)} - c_{1,DD}^{(1)} V_{\text{DC}}^2 \right) q_1 = F_C + 2 c_{0,DA}^{(1)} V_{\text{DC}} v_{\text{in}} + 2 c_{1,DA}^{(1)} q_1 v_{\text{in}}
+    \label{eq:governing_softening}
+\end{equation}
+
+\begin{corrbox}[Correzione Fondamentale 1 -- Segno dell'Electrostatic Softening]
+Nelle prime versioni scritte a mano degli appunti (\texttt{Equazione.pdf}), il termine di softening compariva erroneamente con il segno $+$. Come dimostrato analiticamente nei paper \cite{Frangi2023} (Eq. 17 e 22) e confermato in \texttt{correzioni.tex}, il segno corretto è \textbf{MENO}:
+\begin{equation}
+    k \equiv c_{1,\beta}^{(1)} - c_{1,DD}^{(1)} V_{\text{DC}}^2
+\end{equation}
+\textbf{Spiegazione fisica:} La forza elettrostatica capacitiva è attrattiva e cresce al diminuire della distanza tra le armature ($F_e \propto 1/(g_0-x)^2$). La sua derivata rispetto allo spostamento $\frac{\partial F_e}{\partial x}$ è positiva, il che significa che la forza elettrostatica agisce nello stesso verso dello spostamento, assecondando la deformazione. Questo equivale ad una \textbf{rigidezza negativa} (molla negativa) che riduce la rigidezza meccanica totale $c_{1,\beta}^{(1)}$, abbassando la frequenza di risonanza al crescere di $V_{\text{DC}}$ (\emph{electrostatic softening}).
+\end{corrbox}
+
+\subsection{Analisi della Forza Costante \texorpdfstring{$F_C$}{FC} e Re-Centering attorno all'Equilibrio}
+La componente di forzamento costante $F_C$ è definita da:
+\begin{equation}
+    F_C = c_{0,DD}^{(1)} V_{\text{DC}}^2 - c_{0,\beta}^{(1)}
+\end{equation}
+In unità modali del paper \cite{Frangi2023}, $c_{0,DD}^{(1)} = 96.08 \cdot \varepsilon_0 \approx 8.5 \cdot 10^{-4} \frac{\mu\text{m}}{\mu\text{s}^2 \text{V}^2}$, mentre $c_{0,\beta}^{(1)} = -9.72 \cdot 10^{-9} \frac{\mu\text{m}}{\mu\text{s}^2}$ è trascurabile.
+
+\begin{corrbox}[Correzione Fondamentale 2 -- Significato Fisico di $F_C$ ed Offset Statico]
+Negli appunti manoscritti originari veniva riportato $F_C \approx 9.72 \cdot 10^{-3}\text{ N}$. Questo valore nasceva da un'errata sommatoria di grandezze con unità di misura disomogenee.
+\begin{enumerate}
+    \item $F_C$ non è espressa in Newton [N], ma rappresenta un'\textbf{accelerazione modale} ($\approx 8.5 \cdot 10^{-4} V_{\text{DC}}^2\,\mu\text{m}/\mu\text{s}^2$);
+    \item Tale accelerazione costante produce una deflessione statica d'equilibrio $q_{\text{OS}}$:
+    \begin{equation}
+        q_{\text{OS}} = \frac{F_C}{k} = \frac{8.5 \cdot 10^{-4} V_{\text{DC}}^2}{6.85} \approx 1.24 \cdot 10^{-4} V_{\text{DC}}^2 \,\mu\text{m} \quad (\sim 3.1\text{ nm a } V_{\text{DC}} = 5\text{ V})
+    \end{equation}
+    \item Effettuando il cambio di variabile attorno al nuovo punto di equilibrio d'incurvamento statico $x(t) = q_1(t) - q_{\text{OS}}$, il termine $F_C$ viene esattamente eliso dall'equazione dinamica piccolo segnale.
+    \item \textbf{Conseguenza fondamentale sulla lettura:} La corrente piezoelettrica/capacitiva misurata in uscita dal sensore è proporzionale alla velocità modale $i_S \propto \dot{q}_1(t)$. Essendo la deflessione statica costante nel tempo ($\dot{q}_{\text{OS}} = 0$), $F_C$ \textbf{non produce alcuna corrente in AC} e viene completamente ignorato dall'elettronica di condizionamento (TIA).
+\end{enumerate}
+\end{corrbox}
+
+\subsection{Dimostrazione Matematica dell'Elisione dei Termini di Mixing}
+Rimangono da analizzare i due termini di prodotto non lineare presenti nell'equazione del moto e nella corrente:
+
+\subsubsection{a) Termino di Forzamento Incrociato \texorpdfstring{$2 c_{1,DA}^{(1)} q_1(t) v_{\text{in}}(t)$}{2 c1DA q1 vin}}
+Ipotizzando a regime un'oscillazione armonica dello spostamento $q_1(t) = Q_0 \cos(\omega t)$ ed un ingresso $v_{\text{in}}(t) = V_{\text{AC}} \cos(\omega t)$:
+\begin{align}
+    q_1(t) v_{\text{in}}(t) &= Q_0 V_{\text{AC}} \cos(\omega t) \cos(\omega t) \nonumber \\
+    &= \frac{Q_0 V_{\text{AC}}}{2} \left[ 1 + \cos(2\omega t) \right]
+\end{align}
+Il prodotto genera esclusivamente una componente continua (DC) ed una componente a frequenza doppia $2\omega$. \textbf{Nessuna componente alla frequenza fondamentale $\omega$ viene generata}. Pertanto, nel modello lineare alla frequenza di risonanza $\omega_{01}$, questo termine è rigorosamente nullo e viene scartato.
+
+\subsubsection{b) Termine di Corrente Incrociata \texorpdfstring{$c_{1,DA}^{(1)} V_{\text{DC}} q_1(t) \dot{q}_1(t)$}{c1DA VDC q1 q1dot}}
+La corrente capacitiva generata dal sensore è data da:
+\begin{equation}
+    i_S(t) = c_{0,DA}^{(1)} V_{\text{DC}} \dot{q}_1(t) + c_{1,DA}^{(1)} V_{\text{DC}} q_1(t) \dot{q}_1(t)
+\end{equation}
+Esaminiamo il prodotto $q_1(t) \dot{q}_1(t)$. Poiché $\dot{q}_1(t) = -Q_0 \omega \sin(\omega t) = Q_0 \omega \cos\left(\omega t + \frac{\pi}{2}\right)$:
+\begin{align}
+    q_1(t) \dot{q}_1(t) &= Q_0^2 \omega \cos(\omega t) \cos\left(\omega t + \frac{\pi}{2}\right) \nonumber \\
+    &= \frac{Q_0^2 \omega}{2} \left[ \cos\left(\frac{\pi}{2}\right) + \cos\left(2\omega t + \frac{\pi}{2}\right) \right]
+\end{align}
+Poiché $\cos(\pi/2) = 0$, \textbf{la componente continua è identicamente nulla} ($\cos(\pi/2) = 0$), e rimane unicamente una componente a frequenza doppia $2\omega$:
+\begin{equation}
+    q_1(t) \dot{q}_1(t) = -\frac{Q_0^2 \omega}{2} \sin(2\omega t)
+\end{equation}
+Valutando l'ordine di grandezza per $Q_0 \sim 10^{-9}\text{ m}$ ed $\omega \sim 10^6\text{ rad/s}$:
+$$\left| q_1 \dot{q}_1 \right| \sim (10^{-9})^2 \cdot 10^6 = 10^{-12}$$
+Il termine è sia fuori frequenza (a $2\omega$) sia di ampiezza trascurabile ($10^{-12}$). Può quindi essere scartato con assoluto rigore matematico.
+
+\subsection{Equazione Differenziale Linearizzata Finale}
+A valle dell'elisione di $F_C$, $q_1 v_{\text{in}}$ e $q_1 \dot{q}_1$, l'equazione del moto linearizzata in ciclo aperto si riduce alla forma pura a parametri concentrati:
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1} \dot{q}_1 + k q_1 = 2 c_{0,DA}^{(1)} V_{\text{DC}} v_{\text{in}}(t)
+    \label{eq:pmut_linear_final}
+\end{equation}
+con $k \equiv c_{1,\beta}^{(1)} - c_{1,DD}^{(1)} V_{\text{DC}}^2$.
+
+\newpage
+
+% =========================================================================
+\section{Funzione di Trasferimento e Circuito Equivalente RLC}
+% =========================================================================
+
+\subsection{Trasformata di Laplace e Funzione di Trasferimento}
+Definendo $U_1(s) = \mathcal{L}\{\dot{q}_1(t)\} = s Q_1(s)$ come la trasformata di Laplace della velocità modale, la (\ref{eq:pmut_linear_final}) nel dominio complesso di Laplace diventa:
+\begin{equation}
+    s U_1(s) + \frac{\omega_{01}}{Q_1} U_1(s) + \frac{k}{s} U_1(s) = 2 c_{0,DA}^{(1)} V_{\text{DC}} V_{\text{in}}(s)
+\end{equation}
+La funzione di trasferimento fra la tensione d'ingresso $V_{\text{in}}(s)$ e la velocità modale $U_1(s)$ è:
+\begin{equation}
+    \frac{U_1(s)}{V_{\text{in}}(s)} = \frac{2 c_{0,DA}^{(1)} V_{\text{DC}}}{s + \frac{\omega_{01}}{Q_1} + \frac{k}{s}}
+    \label{eq:tf_velocity}
+\end{equation}
+La funzione di trasferimento dello spostamento $H(s) = \frac{Q_1(s)}{V_{\text{in}}(s)} = \frac{U_1(s)}{s V_{\text{in}}(s)}$ è:
+\begin{equation}
+    H(s) = \frac{2 c_{0,DA}^{(1)} V_{\text{DC}}}{s^2 + \frac{\omega_{01}}{Q_1} s + k}
+\end{equation}
+
+La corrente di sensing capacitiva $I_S(s) = c_{0,DA}^{(1)} V_{\text{DC}} U_1(s)$ vale pertanto:
+\begin{equation}
+    Y_m(s) \equiv \frac{I_S(s)}{V_{\text{in}}(s)} = \frac{2 \left( c_{0,DA}^{(1)} V_{\text{DC}} \right)^2 s}{s^2 + \frac{\omega_{01}}{Q_1} s + k}
+    \label{eq:admittance_motional}
+\end{equation}
+
+\subsection{Derivazione del Ramo Serie RLC Equivalente}
+Calcolando l'impedenza motionale $Z_m(s) = \frac{1}{Y_m(s)}$:
+\begin{equation}
+    Z_m(s) = \frac{s^2 + \frac{\omega_{01}}{Q_1} s + k}{2 \left( c_{0,DA}^{(1)} V_{\text{DC}} \right)^2 s} = \frac{1}{2 \alpha_0^2} s + \frac{\omega_{01} / Q_1}{2 \alpha_0^2} + \frac{k}{2 \alpha_0^2 s}
+\end{equation}
+dove si è posto $\alpha_0 \equiv c_{0,DA}^{(1)} V_{\text{DC}}$.
+Confrontando con l'impedenza di un ramo RLC serie $Z_m(s) = s L_m + R_m + \frac{1}{s C_m}$, si identificano i parametri circuitali equivalenti in unità modali ($M=1$):
+\begin{equation}
+    \boxed{
+    L_m = \frac{1}{2 \alpha_0^2}, \qquad R_m = \frac{\omega_{01} / Q_1}{2 \alpha_0^2}, \qquad C_m = \frac{2 \alpha_0^2}{k}
+    }
+    \label{eq:rlc_modal_formulas}
+\end{equation}
+
+\subsection{Origine e Ruolo della Capacità Parassita in Parallelo \texorpdfstring{$C_p$}{Cp}}
+Il modello circuito completo del risonatore capacitivo visto da una porta elettrica è rappresentato dal modello Butterworth-Van Dyke (BVD), costituito dal ramo motionale $L_m-R_m-C_m$ posto in parallelo ad una capacità statica/parassita $C_p$:
+
+\begin{center}
+\begin{circuitikz}[scale=1.0, transform shape]
+    \draw (0,1.5) node[left] {$V_{\text{in}}$} to[short, o-] (1,1.5)
+          -- (1,2.5) to[L, l=$L_m$] (2.5,2.5)
+          to[R, l=$R_m$] (4,2.5)
+          to[C, l=$C_m$] (5.5,2.5) -- (6,2.5) -- (6,1.5);
+    
+    \draw (1,1.5) -- (1,0.5) to[C, l=$C_p$] (5.5,0.5) -- (6,0.5);
+    \draw (6,1.5) to[short, -o] (7,1.5) node[right] {$I_{\text{tot}}$};
+\end{circuitikz}
+\end{center}
+
+\begin{notebox}[Origine Fisica di $C_p$]
+La capacità $C_p$ in parallelo rappresenta il percorso elettrico diretto esistente tra i nodi della porta, indipendentemente dal movimento meccanico. Essa comprende:
+\begin{itemize}
+    \item Capacità statica geometrica tra l'elettrodo fisso di drive ed la struttura mobile ($C_{\text{gap}} \approx 60 \div 250\text{ fF}$);
+    \item Capacità parassite dei pad d'allacciamento on-chip e dei cavi di bondwire ($\sim 100 \div 300\text{ fF}$);
+    \item Capacità del package PLCC68 e dell'ingresso dello stadio amplificatore TIA ($\sim 0.5 \div 1.5\text{ pF}$).
+\end{itemize}
+L'ammettenza totale è data da $Y_{\text{tot}}(s) = s C_p + Y_m(s)$.
+\end{notebox}
+
+\subsection{Massa Efficace \texorpdfstring{$m_{\text{eff}}$}{meff} vs Unità Modali \texorpdfstring{$M=1$}{M=1}}
+\begin{corrbox}[Correzione Fondamentale 3 -- La Massa Efficace nel ROM]
+Nei modelli modali del paper \cite{Frangi2023}, la massa modale viene formalmente impostata ad unità ($M=1$). Ciò \textbf{non significa} che il MEMS pesi $1\text{ kg}$!
+La massa fisica del risonatore ad arco è della massa strutturale totale dei due beam:
+$$m_{\text{tot}} = \rho V = 2330 \cdot (2 \cdot 532 \cdot 5 \cdot 24 \cdot 10^{-18})\text{ kg} \approx 3.0 \cdot 10^{-10}\text{ kg}$$
+La massa efficace del primo modo $m_{\text{eff}}$ (normalizzata allo spostamento massimo al centro della campata) è circa una frazione $0.3 \div 0.4$ della massa totale:
+$$m_{\text{eff}} \approx 1.0 \cdot 10^{-10}\text{ kg}$$
+La massa efficace serve \textbf{esclusivamente} per convertire il modello algebrico nelle unità del Sistema Internazionale (SI): $k_{\text{eff}} = m_{\text{eff}} \omega_{01}^2 \approx 685\text{ N/m}$, $c_{\text{eff}} = \frac{m_{\text{eff}} \omega_{01}}{Q_1} \approx 9.3 \cdot 10^{-8}\text{ N s/m}$.
+\end{corrbox}
+
+\newpage
+
+% =========================================================================
+\section{Analisi del Ringdown Libero in Ciclo Aperto}
+% =========================================================================
+
+\subsection{Equazione Omogenea del Decadimento ed Autovalori}
+Allo spegnimento del segnale di eccitazione ($v_{\text{in}} = 0$), il primo modo entra in evoluzione libera (\emph{ringdown}). L'equazione omogenea associata è:
+\begin{equation}
+    \ddot{q}_1 + \frac{\omega_{01}}{Q_1} \dot{q}_1 + k q_1 = 0
+\end{equation}
+Il polinomio caratteristico $\lambda^2 + \frac{\omega_{01}}{Q_1} \lambda + k = 0$ ha radici complesse coniugate:
+\begin{equation}
+    \lambda_{1,2} = \mu \pm j \omega_r = -\frac{\omega_{01}}{2 Q_1} \pm j \sqrt{k - \frac{\omega_{01}^2}{4 Q_1^2}}
+\end{equation}
+
+\subsection{Valutazione Numerica dei Parametri Naturale}
+Inserendo i parametri sperimentali misurati nei paper \cite{Frangi2023, Nastro2026}:
+\begin{itemize}
+    \item Pulsazione propria: $\omega_{01} = 2\pi \cdot 416.6\text{ kHz} \approx 2.618 \cdot 10^6\text{ rad/s}$;
+    \item Fattore di qualità in vuoto/bassa pressione: $Q_1 \approx 2800$;
+    \item Coefficiente di smorzamento naturale $\mu$:
+    \begin{equation}
+        \mu = -\frac{\omega_{01}}{2 Q_1} = -\frac{2.618 \cdot 10^6}{2 \cdot 2800} \approx -467.5\text{ s}^{-1}
+    \end{equation}
+    \item Costante di tempo del decadimento dell'ampiezza $\tau$:
+    \begin{equation}
+        \tau = \frac{1}{|\mu|} = \frac{2 Q_1}{\omega_{01}} \approx 2.139\text{ ms}
+    \end{equation}
+\end{itemize}
+
+\subsection{Calcolo Esatto del Tempo di Decadimento Libero \texorpdfstring{$t_d$}{td}}
+La risposta nel tempo della coordinata modale in evoluzione libera ha la forma:
+\begin{equation}
+    q_1(t) = q_0 e^{\mu t} \cos(\omega_r t + \varphi_0)
+\end{equation}
+Imponendo che l'inviluppo delle oscillazioni libere si attenui di un fattore 10 ($e^{\mu t_d} = 0.1 \implies -\mu t_d = \ln 10$):
+
+\begin{corrbox}[Correzione Fondamentale 4 -- Valore Numerico Corretto del Tempo $t_d$]
+Negli appunti originari figurava un tempo di decadimento pari a $4.6\text{ ms}$. Si tratta di un piccolo errore aritmetico di calcolo. Il valore esatto è:
+\begin{equation}
+    t_d = \frac{\ln(10)}{|\mu|} = \ln(10) \cdot \frac{2 Q_1}{\omega_{01}} \approx 2.3026 \cdot 2.139\text{ ms} \approx \mathbf{4.92\text{ ms}}
+\end{equation}
+\end{corrbox}
+
+\begin{warnbox}[Problematica Operativa: La Blind Area]
+In un funzionamento pulsato (\emph{pulse-echo / gated excitation}), un tempo di ringdown libero di \textbf{4.9 ms} impone un limite severo al rate di ripetizione e crea un'estesa zona cieca (\emph{blind area}), impedendo la ricezione di echi ravvicinati. Da qui la necessità di tecniche di \textbf{soppressione attiva del ringdown}.
+\end{warnbox}
+
+\newpage
+
+% =========================================================================
+\section{Analisi Comparativa delle Tecniche di Soppressione Attiva}
+% =========================================================================
+
+\subsection{Strategia A: Retroazione Diretta di Velocità (Active Q-Control)}
+
+\subsubsection{Principio di Funzionamento e Schema a Blocchi}
+La retroazione diretta preleva la corrente di sensing $i_S(t) = c_{0,DA}^{(1)} V_{\text{DC}} \dot{q}_1(t)$, la converte in tensione mediante un amplificatore di transimpedenza (TIA) e transconduttanza con guadagno totale $G_e = \frac{R_F R_2}{R_1}$, ottenendo la tensione $V_0(t) = G_e c_{0,DA}^{(1)} V_{\text{DC}} \dot{q}_1(t)$.
+Tale segnale viene reiniettato all'ingresso d'attuazione in controfase: $v_{\text{in}}(t) = -A V_0(t)$.
+
+\begin{center}
+\begin{tikzpicture}[auto, node distance=2.2cm, >=latex']
+    \node [input, name=input] {};
+    \node [sum, right=1cm of input] (sum) {};
+    \node [block, right=1cm of sum, align=center] (g1) {$\frac{U_1}{V_{\mathrm{in}}} = \frac{2 c_{0,DA}^{(1)} V_{\mathrm{DC}}}{s + \frac{\omega_{01}}{Q_1} + \frac{k}{s}}$};
+    \node [block, right=1.2cm of g1, align=center] (g2) {$\frac{I_S}{U_1} = c_{0,DA}^{(1)} V_{\mathrm{DC}}$};
+    \node [block, right=1.2cm of g2, align=center] (ge) {$G_e = \frac{R_F R_2}{R_1}$};
+    \node [coordinate, right=1.2cm of ge] (output) {};
+    \node [block, below=1.2cm of g2] (feedback) {$-A$};
+
+    \draw [draw,->] (input) -- node {$V_{\mathrm{in}}$} (sum);
+    \draw [->] (sum) -- node {} (g1);
+    \draw [->] (g1) -- node [name=u1] {$U_1$} (g2);
+    \draw [->] (g2) -- node {$I_S$} (ge);
+    \draw [->] (ge) -- node [name=v0] {$V_0$} (output);
+    \draw [->] (v0) |- (feedback);
+    \draw [->] (feedback) -| node[near end] {$+$} (sum);
+\end{tikzpicture}
+\end{center}
+
+\subsubsection{Nuova Costante di Smorzamento in Ciclo Chiuso \texorpdfstring{$\mu'$}{mu'}}
+Sostituendo $v_{\text{in}} = -A G_e c_{0,DA}^{(1)} V_{\text{DC}} \dot{q}_1$ nell'equazione del moto:
+\begin{equation}
+    \ddot{q}_1 + \left[ \frac{\omega_{01}}{Q_1} + 2 A G_e \left( c_{0,DA}^{(1)} V_{\text{DC}} \right)^2 \right] \dot{q}_1 + k q_1 = 0
+\end{equation}
+La nuova costante di smorzamento in ciclo chiuso $\mu'$ risulta:
+\begin{equation}
+    \mu' = -\frac{1}{2} \left[ \frac{\omega_{01}}{Q_1} + 2 A G_e \left( c_{0,DA}^{(1)} V_{\text{DC}} \right)^2 \right]
+    \label{eq:mu_closed_loop}
+\end{equation}
+
+\subsubsection{Smontaggio del "Mito del Guadagno \texorpdfstring{$10^{12}$}{10^12}" e Calcolo Corretto via Osservabile}
+\begin{corrbox}[Correzione Fondamentale 5 -- Il Falso Guadagno $10^{12}$]
+Nelle prime discussioni si temeva che la retroazione diretta richiedesse un guadagno elettronico mostruoso $A \sim 10^{12}$, sufficiente a saturare istantaneamente qualsiasi amplificatore operazionale.
+\textbf{Origine dell'errore:} Il valore $10^{12}$ deriva dall'aver trattato la massa modale $M=1$ del ROM come $1\text{ kg}$ in SI, senza convertire contemporaneamente il coefficiente $c_{0,DA}^{(1)}$ dalle unità del paper ($\mu\text{m}-\mu\text{s}-\text{pF}$) a quelle SI.
+
+\textbf{Calcolo Corretto via Osservabile Misurato ($Y_{\text{res}}$):}
+Per evitare qualunque errore di conversione di unità, si esprime lo smorzamento aggiunto in funzione dell'ammettenza motionale a risonanza $Y_{\text{res}} = \frac{I_{\text{res}}}{V_{\text{AC}}}$ misurata direttamente nello studio sperimentale \cite{Frangi2023, UniBS2026}.
+Per $V_{\text{DC}} = 4\text{ V}$, $V_{\text{AC}} = 177.8\text{ mV}$, si misura una corrente motionale $I_{\text{res}} \approx 5\text{ nA}$:
+\begin{equation}
+    Y_{\text{res}} = \frac{5\text{ nA}}{177.8\text{ mV}} \approx 2.81 \cdot 10^{-8}\text{ S}
+\end{equation}
+Il rapporto tra lo smorzamento aggiunto ed il valore naturale vale:
+\begin{equation}
+    \frac{c_{\text{add}}}{c_{\text{nat}}} = A \cdot G_e \cdot Y_{\text{res}}
+\end{equation}
+Con uno stadio TIA di guadagno tipico $G_e = 10^6\ \Omega$ ($1\text{ nA} \to 1\text{ mV}$):
+\begin{equation}
+    \frac{c_{\text{add}}}{c_{\text{nat}}} = A \cdot 10^6 \cdot \left( 2.81 \cdot 10^{-8} \right) = \mathbf{0.0281 \cdot A}
+\end{equation}
+Si calcolano ora i valori effettivi di guadagno $A$ necessari:
+\begin{itemize}
+    \item \textbf{Per dimezzare il tempo di decadimento} ($c_{\text{add}}/c_{\text{nat}} = 1$):
+    $$A_{\tau/2} = \frac{1}{0.0281} \approx \mathbf{35.6}$$
+    \item \textbf{Per ridurre il tempo di 10 volte} ($c_{\text{add}}/c_{\text{nat}} = 9$):
+    $$A_{\tau/10} = \frac{9}{0.0281} \approx \mathbf{320}$$
+\end{itemize}
+
+\textbf{Verifica anti-saturazione:} All'inizio del ringdown, il segnale di tensione in uscita dal TIA è $V_0 = 5\text{ nA} \cdot 10^6 = 5\text{ mV}$. Con un guadagno $A = 320$, la tensione applicata al drive è $v_{\text{in}} = 320 \cdot 5\text{ mV} = \mathbf{1.6\text{ V}}$.
+\textbf{Conclusione:} La retroazione diretta \textbf{non satura assolutamente l'operazionale} ed è perfettamente realizzabile con stadi operazionali standard!
+\end{corrbox}
+
+\subsubsection{Analisi del Rumore e Limiti di Fase}
+\begin{itemize}
+    \item \textbf{Pavimento di Rumore (\emph{Noise Floor}):} Il rumore del TIA (circa $0.2 \div 0.5\,\mu\text{V}/\sqrt{\text{Hz}}$) iniettato nel loop viene filtrato dalla banda stretta del risonatore ($\Delta f \approx 140\text{ Hz}$). Il segnale residuo di rumore a regime è inferiore all'1\% dell'ampiezza iniziale del ringdown.
+    \item \textbf{Sensibilità alla Fase:} La retroazione richiede che la forza sia esattamente in opposizione di fase rispetto alla velocità ($180^\circ$). Sfasamenti introdotti dall'elettronica a $416\text{ kHz}$ possono trasformare lo smorzamento in instabilità (auto-oscillazione). È raccomandato l'uso di un circuito passa-banda + sfasatore regolabile (\emph{all-pass filter}).
+\end{itemize}
+
+\subsection{Strategia B: Spia Virtuale Circuito RLC Equivalente}
+
+\subsubsection{Principio del Surrogato Circuitale (da \cite{Wu2021} e \texttt{Ringdown Alt.pdf})}
+Per ovviare alla necessità di prelevare il debole segnale dal sensore reale $V_0$ durante la commutazione, la Strategia B propone di costruire un circuito analogico RLC in parallelo ("spia virtuale") che emula la medesima funzione di trasferimento del PMUT. Il circuito viene stimolato dalla stessa tensione $V_{\text{in}}$ generata dal sistema.
+
+\begin{center}
+\begin{circuitikz}[scale=0.85, transform shape]
+    \draw (0,0) node[above] {$V_{\mathrm{in}}$} to[short, o-] (0.5,0)
+          to[L, l=$L_r$] (2,0)
+          to[R, l=$R_r$] (3.5,0)
+          to[C, l=$C_r$] (5,0) -- (5.5,0);
+    
+    \draw (6,0.5) node[op amp] (opamp) {};
+    \draw (5.5,0) -- (opamp.-);
+    \draw (opamp.+) -- (5.5,-1) node[ground] {};
+    
+    \draw (opamp.-) -- (5.5,1.5) to[R, l=$R_3$] (7,1.5) |- (opamp.out);
+    \draw (opamp.out) to[short, -o] (8,0.5) node[right] {$V_r$};
+\end{circuitikz}
+\end{center}
+
+La tensione d'uscita della spia virtuale $V_r(s)$ è direttamente proporzionale alla velocità modale virtuale:
+\begin{equation}
+    \frac{V_r(s)}{V_{\text{in}}(s)} = \frac{-R_3}{s L_r + R_r + \frac{1}{s C_r}}
+\end{equation}
+
+\subsubsection{Dimensionamento Corretto dei Componenti RLC Virtuali}
+I vincoli di progetto impongono l'uguaglianza della frequenza di risonanza e del fattore di qualità:
+\begin{align}
+    f_{\text{ref}} &= f_{01} = \frac{1}{2\pi \sqrt{L_r C_r}} = 416.6\text{ kHz} \\
+    Q_{\text{ref}} &= Q_1 = \frac{1}{R_r} \sqrt{\frac{L_r}{C_r}} = 2800
+\end{align}
+
+\begin{corrbox}[Correzione Fondamentale 6 -- Valori dei Componenti della Spia Virtuale]
+Negli appunti manoscritti di \texttt{Ringdown Alt.pdf} figuravano i valori $C_r = 60.85\text{ pF}$ e $R_r = 10\,\Omega$. Essi erano errati poiché non soddisfacevano la relazione $Q_1 = 2800$.
+Fissando per ragioni di progetto $L_r = 1.0\text{ mH}$, i valori corretti calcolati analiticamente sono:
+\begin{align}
+    C_r &= \frac{1}{\omega_{01}^2 L_r} = \frac{1}{(2.618 \cdot 10^6)^2 \cdot 10^{-3}} \approx \mathbf{146\text{ pF}} \\
+    R_r &= \frac{\omega_{01} L_r}{Q_1} = \frac{2.618 \cdot 10^6 \cdot 10^{-3}}{2800} \approx \mathbf{0.93\,\Omega}
+\end{align}
+\end{corrbox}
+
+\subsubsection{Problematiche e Limiti Pratici della Spia Virtuale}
+\begin{enumerate}
+    \item \textbf{Resistenza Parassita dell'Induttore (DCR):} Un induttore reale da $1\text{ mH}$ a $416\text{ kHz}$ presenta una resistenza parassita di serie superiore a $2 \div 5\,\Omega$, distruggendo il fattore di qualità $Q_1$ se non viene ridotto il valore di $L_r$ o usata una compensazione attiva;
+    \item \textbf{Sensibilità alle Tolleranze e Drift Non Lineare:} Durante il decadimento libero, l'effetto Duffing ed il softening modificano la frequenza del MEMS reale al variare dell'ampiezza. La spia virtuale (puramente lineare) non segue questo drift, andando fuori fase proprio durante il ringdown.
+\end{enumerate}
+
+\subsection{Strategia C: Generazione Feedforward di Coda da AWG}
+Questa tecnica (ispirata al lavoro su PMUT \cite{Wu2021}) non utilizza alcun ciclo di retroazione analogico, ma programma direttamente nel generatore di forme d'onda (AWG) una coda di cancellazione invertita da applicare subito dopo il burst d'eccitazione.
+\begin{itemize}
+    \item \textbf{Vantaggi:} Zero hardware aggiuntivo, nessuna instabilità o auto-oscillazione;
+    \item \textbf{Svantaggi:} Sistema in ciclo aperto, sensibile alle variazioni di temperatura ed invecchiamento del dispositivo.
+\end{itemize}
+
+\newpage
+
+% =========================================================================
+\section{Tabella Sinottica Riassuntiva dei Parametri e Confronto}
+% =========================================================================
+
+\begin{table}[h!]
+\centering
+\caption{Quadro comparativo definitivo dei parametri fisici, correzioni ed analisi delle strategie}
+\vspace{0.2cm}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Parametro / Concetto} & \textbf{Valore Errato / Vecchio} & \textbf{Valore Corretto / Definitivo} & \textbf{Note e Significato Fisico} \\ \midrule
+Segno Softening Elettrostatico & $+ c_{1,DD}^{(1)} V_{\text{DC}}^2$ & $- c_{1,DD}^{(1)} V_{\text{DC}}^2$ & Molla negativa; riduce la rigidezza ($k = c_{1,\beta} - c_{1,DD} V_{\text{DC}}^2$) \\
+Forza Costante $F_C$ & $9.72 \cdot 10^{-3}\text{ N}$ & $\approx 8.5 \cdot 10^{-4} V_{\text{DC}}^2\,\mu\text{m}/\mu\text{s}^2$ & Accelerazione modale; offset statico $q_{\text{OS}} \sim 3\text{ nm}$, irrilevante in AC \\
+Tempo Decadimento Libero $t_d$ & $4.6\text{ ms}$ & $\mathbf{4.92\text{ ms}}$ & Calcolo esatto per attenuazione $\times 10$ ($t_d = \ln(10) \frac{2 Q_1}{\omega_{01}}$) \\
+Guadagno Retroazione $A_{\tau/10}$ & $10^{12}$ (saturante) & $\mathbf{320}$ (con $G_e = 10^6$) & $v_{\text{in}} = 1.6\text{ V}$ al picco; **nessuna saturazione dell'op-amp** \\
+Spia Virtuale Capacità $C_r$ & $60.85\text{ pF}$ & $\mathbf{146\text{ pF}}$ (per $L_r = 1\text{ mH}$) & Soddisfa $f_{01} = 416.6\text{ kHz}$ \\
+Spia Virtuale Resistenza $R_r$ & $10\,\Omega$ & $\mathbf{0.93\,\Omega}$ (per $L_r = 1\text{ mH}$) & Soddisfa $Q_1 = 2800$; critica per DCR induttore \\ \midrule
+\textbf{Strategia A (Velocity FB)} & Closed-loop su $V_0$ & Guadagno $A \sim 320$, BPF + Phase Shift & **Raccomandata**: autoregolante, stabile con filtro \\
+\textbf{Strategia B (Spia RLC)} & Closed-loop su $V_r$ & Limite su DCR induttore e drift Duffing & Alternativa di backup per ambienti molto rumorosi \\
+\textbf{Strategia C (AWG Tail)} & Feedforward in AWG & Semplice, ma non autoregolante & Ottima per test rapidi di laboratorio \\ \bottomrule
+\end{tabular}
+}
+\end{table}
+
+\section*{Conclusione}
+\addcontentsline{toc}{section}{Conclusione}
+Il compendio dimostra rigorosamente la validità del modello modale linearizzato per il primo modo del risonatore MEMS capacitivo ad arco. Le correzioni dimensionali hanno chiarito come il ciclo di retroazione diretta di velocità sia \textbf{pienamente fattibile con guadagni elettronici modesti ($A \approx 30 \div 320$)}, superando il falso ostacolo della saturazione e fornendo una guida completa per l'implementazione circuitale e la caratterizzazione di laboratorio.
+
+\begin{thebibliography}{99}
+\bibitem{Frangi2023} G. Gobat, V. Zega, P. Fedeli, C. Touzé, A. Frangi, \textit{"Frequency combs in a MEMS resonator featuring 1:2 internal resonance: ab initio reduced order modelling and experimental validation"}, Nonlinear Dynamics, vol. 111, pp. 2991--3017, 2023.
+\bibitem{Nastro2026} A. Nastro, M. Zini, P. Belardinelli, F. Clementi, P. Russo, L. Bastianelli, L. Rosafalco, T. Ma, A. Frangi, M. Ferrari, \textit{"Experimental Characterization of a Nonlinear Electrostatic-Capacitive MEMS Resonator featuring 1:2 Internal Resonance"}, IEEE Sensors Letters, 2026.
+\bibitem{Wu2021} Z. Wu, W. Liu, Z. Tong, S. Zhang, Y. Gu, G. Wu, A. Tovstopyat, C. Sun, L. Lou, \textit{"A Novel Transfer Function Based Ring-Down Suppression System for PMUTs"}, Sensors, vol. 21, art. 6414, 2021.
+\bibitem{UniBS2026} M. Zini, A. Nastro, M. Ferrari, \textit{"Experimental characterization of MEMS resonators -- PoC device validation"}, Università degli Studi di Brescia, Project DIMIN Report D3.1, 2026.
+\end{thebibliography}
+
+\end{document}
