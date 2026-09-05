@@ -267,51 +267,27 @@ def main():
     # =========================================================================
     # GRAFICO 1: LINEARITA vs COMPRESSIONE DI GUADAGNO (A0 vs Vin)
     # =========================================================================
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig, ax1 = plt.subplots(figsize=(8.5, 6))
 
-    # Pannello A: A0 vs Vin con retta ideale
+    # A0 vs Vin con retta ideale
     ax1.plot(vin_dense, A0_ideal_lin, '--', color='#7f8c8d', linewidth=1.8,
-             label=rf'Estensione Lineare Ideale ($G = {slope_lin:.3f}\,\mathrm{{mV/mV}}$)')
-    ax1.plot(vin_arr, A0_arr, 'o-', color='#2980b9', linewidth=2.2, markersize=6.5,
-             label=r'Dati Sperimentali $A_0$ vs $V_{\mathrm{in}}$')
-    ax1.plot(vin_1db, A0_1db, '*', color='#e74c3c', markersize=14, zorder=6,
-             label=rf'Punto di Compressione $-1\,\mathrm{{dB}}$ ($V_{{\mathrm{{in}}}} \approx {vin_1db:.0f}\,\mathrm{{mV}}$)')
+             label=rf'Fit lineare ($G = {slope_lin:.3f}\,\mathrm{{mV/mV}}$)')
+    ax1.plot(vin_arr, A0_arr, 'o-', color='#2980b9', linewidth=2.0, markersize=5.5,
+             label='Dati')
+    ax1.plot(vin_1db, A0_1db, '*', color='#e74c3c', markersize=11, zorder=6,
+             label=rf'Punto a $-1\,\mathrm{{dB}}$ ({vin_1db:.0f} mV)')
 
-    ax1.annotate('Forte compressione Duffing:\nla risonanza scivola via da 417.85 kHz',
-                 xy=(800, A0_arr[-2]), xytext=(550, A0_ideal_lin[750] - 80),
-                 arrowprops=dict(arrowstyle='->', lw=1.3, color='black'),
-                 fontsize=9, fontweight='bold', bbox=dict(boxstyle='round,pad=0.3', fc='#fadbd8', ec='#e74c3c'))
-
-    ax1.set_title(r'(A) Ampiezza Ringdown $A_0$ vs Tensione Forzante $V_{\mathrm{in}}$', fontweight='bold', pad=10)
-    ax1.set_xlabel(r'Tensione di Eccitazione $V_{\mathrm{in}}$ [$\mathrm{mV}_{\mathrm{pp}}$]', fontweight='bold')
-    ax1.set_ylabel(r'Ampiezza Iniziale Ringdown $A_0$ [mV]', fontweight='bold')
+    ax1.set_title(r'Ampiezza ringdown vs tensione di eccitazione')
+    ax1.set_xlabel(r'Tensione di eccitazione $V_{\mathrm{in}}$ [$\mathrm{mV}_{\mathrm{pp}}$]')
+    ax1.set_ylabel(r'Ampiezza iniziale ringdown $A_0$ [mV]')
     ax1.set_xlim([0, 1050])
     ax1.set_ylim([0, 300])
     ax1.grid(True)
-    ax1.legend(loc='upper left', framealpha=0.92)
+    ax1.legend(loc='upper left', framealpha=0.95)
 
-    # Pannello B: Guadagno Normalizzato A0 / Vin (Dimostrazione Compressione)
-    gain_arr = A0_arr / vin_arr
-    gain_norm = gain_arr / slope_lin
-    ax2.plot(vin_arr, gain_norm, 's-', color='#8e44ad', linewidth=2.2, markersize=6,
-             label=r'Guadagno Normalizzato $\frac{A_0 / V_{\mathrm{in}}}{G_{\mathrm{lin}}}$')
-    ax2.axhline(1.0, color='#7f8c8d', linestyle='--', linewidth=1.5, label='Livello Lineare (100%)')
-    ax2.axhline(0.891, color='#e74c3c', linestyle=':', linewidth=1.8, label=r'Soglia $-1\,\mathrm{dB}$ (89.1%)')
-
-    ax2.set_title(r'(B) Compressione di Guadagno: Perdita di Linearita', fontweight='bold', pad=10)
-    ax2.set_xlabel(r'Tensione di Eccitazione $V_{\mathrm{in}}$ [$\mathrm{mV}_{\mathrm{pp}}$]', fontweight='bold')
-    ax2.set_ylabel(r'Guadagno Normalizzato rispetto a Piccolo Segnale', fontweight='bold')
-    ax2.set_xlim([0, 1050])
-    ax2.set_ylim([0.3, 1.1])
-    ax2.grid(True)
-    ax2.legend(loc='upper right', framealpha=0.92)
-
-    fig.suptitle('Caratterizzazione Non-Linearita di Duffing: Risposta in Ampiezza\n'
-                 r'$V_{\mathrm{DC}} = 5.0\,\mathrm{V},\, f_{\mathrm{in}} = 417850\,\mathrm{Hz},\, \mathrm{Burst} = 2500\,\mathrm{cicli}$',
-                 fontsize=13, fontweight='bold', y=1.02)
     plt.tight_layout()
     fig1_path = os.path.join(base_dir, 'duffing_ampiezza_compressione.png')
-    plt.savefig(fig1_path, dpi=300, bbox_inches='tight')
+    plt.savefig(fig1_path, dpi=300)
     plt.close()
     print(f"[GRAFICO 1 GENERATO] {fig1_path}")
 
@@ -366,9 +342,9 @@ def main():
     # =========================================================================
     # GRAFICO 3: LA BACKBONE CURVE E IL CHIRP INTRA-RINGDOWN
     # =========================================================================
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig, ax1 = plt.subplots(figsize=(8.5, 6))
 
-    # Pannello A: Evoluzione temporale di f_inst(t) lungo il ringdown (Chirp)
+    # Evoluzione temporale di f_inst(t) lungo il ringdown (Chirp)
     sel_files_bb = [53, 58, 63, 66]
     colors_bb = ['#27ae60', '#f39c12', '#e67e22', '#c0392b']
     labels_bb = ['100 mV', '250 mV', '500 mV', '1000 mV']
@@ -377,35 +353,16 @@ def main():
         r_sel = next(r for r in results if r['file_num'] == num_sel)
         ax1.plot(r_sel['t_bb'], r_sel['f_bb'], color=col, linewidth=2.0, label=rf'$V_{{\mathrm{{in}}}} = {lab}$')
 
-    ax1.set_title(r'(A) Chirp Intra-Ringdown: $f_{\mathrm{inst}}(t)$ Risale Verso $f_s(0)$', fontweight='bold', pad=10)
-    ax1.set_xlabel(r'Tempo dal Taglio del Gate [ms]', fontweight='bold')
-    ax1.set_ylabel(r'Frequenza Istantanea $f_{\mathrm{inst}}$ [Hz]', fontweight='bold')
+    ax1.set_title(r'Chirp intra-ringdown: frequenza istantanea nel tempo')
+    ax1.set_xlabel('Tempo dal taglio del gate [ms]')
+    ax1.set_ylabel(r'Frequenza istantanea $f_{\mathrm{inst}}$ [Hz]')
     ax1.set_xlim([0.3, 3.8])
     ax1.grid(True)
-    ax1.legend(loc='lower right', framealpha=0.92)
+    ax1.legend(loc='lower right', framealpha=0.95)
 
-    # Pannello B: Backbone Curve A_inst vs f_inst
-    for num_sel, col, lab in zip(sel_files_bb, colors_bb, labels_bb):
-        r_sel = next(r for r in results if r['file_num'] == num_sel)
-        ax2.plot(r_sel['f_bb'], r_sel['A_bb'], color=col, linewidth=2.0, label=rf'Traiettoria $V_{{\mathrm{{in}}}} = {lab}$')
-
-    # Disegna lo scheletro ideale teorico
-    f_skel = np.linspace(np.min(fs_arr) - 5, fs_arr[0] + 5, 200)
-    A_skel = np.sqrt(np.maximum(0, (f_skel - f0_duff) / beta_duff))
-    ax2.plot(f_skel, A_skel, '--', color='#2c3e50', linewidth=2.2, label=r'Backbone Curve Master (Scheletro)')
-
-    ax2.set_title(r'(B) Backbone Curve Universale: Ampiezza vs Frequenza Istantanea', fontweight='bold', pad=10)
-    ax2.set_xlabel(r'Frequenza Istantanea $f_{\mathrm{inst}}$ [Hz]', fontweight='bold')
-    ax2.set_ylabel(r'Ampiezza Istantanea $A(t)$ [mV]', fontweight='bold')
-    ax2.grid(True)
-    ax2.legend(loc='upper left', framealpha=0.92)
-
-    fig.suptitle('Tracciamento Diretto della Spina Dorsale di Duffing (Backbone Curve) tramite Ringdown\n'
-                 'Tutte le traiettorie di decadimento libero collassano sulla medesima curva universale',
-                 fontsize=13, fontweight='bold', y=1.02)
     plt.tight_layout()
     fig3_path = os.path.join(base_dir, 'duffing_backbone_e_chirp.png')
-    plt.savefig(fig3_path, dpi=300, bbox_inches='tight')
+    plt.savefig(fig3_path, dpi=300)
     plt.close()
     print(f"[GRAFICO 3 GENERATO] {fig3_path}")
 
@@ -461,13 +418,17 @@ def main():
     print(f"[GRAFICO 4 GENERATO] {fig4_path}")
 
     # =========================================================================
-    # COPIA NEGLI ARTIFACTS PER VISUALIZZAZIONE IMMEDIATA
+    # COPIA NEGLI ARTIFACTS PER VISUALIZZAZIONE IMMEDIATA (FACOLTATIVA)
     # =========================================================================
-    os.makedirs(artifact_dir, exist_ok=True)
-    for p in [fig1_path, fig2_path, fig3_path, fig4_path, csv_out]:
-        dest = os.path.join(artifact_dir, os.path.basename(p))
-        shutil.copy(p, dest)
-        print(f"[ARTIFACT COPIATO] {dest}")
+    try:
+        os.makedirs(artifact_dir, exist_ok=True)
+        for p in [fig1_path, fig2_path, fig3_path, fig4_path, csv_out]:
+            if os.path.exists(p):
+                dest = os.path.join(artifact_dir, os.path.basename(p))
+                shutil.copy(p, dest)
+                print(f"[ARTIFACT COPIATO] {dest}")
+    except Exception as e:
+        pass
 
     print("\n" + "=" * 80)
     print("      ELABORAZIONE DUFFING COMPLETATA CON SUCCESSO!")
