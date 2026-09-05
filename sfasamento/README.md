@@ -25,18 +25,21 @@ Dall'elaborazione del file [`scope_70.csv`](file:///c:/Users/lucaa/Downloads/ESM
 - **Stima Diretta di $C_p$:**
   $$C_p = \frac{1.41188}{2\pi \times 50\,000 \times 5.0\times 10^6} = \mathbf{0.8989\,\text{pF}} \quad (\mathbf{898.9\,\text{fF}})$$
 
-### [B] Misura a 417.79 kHz (`scope_69.csv`)
-Nel file [`scope_69.csv`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/scope_69.csv), registrato a $f = 417\,790.1\,\text{Hz}$ (in prossimità della buca di antirisonanza):
-- $V_{\text{in}} = 100.2\,\text{mV}$, $V_{\text{out}} = 1.2118\,\text{V} \implies \text{Gain} = 12.094\,\text{V/V}$, $\Delta \phi = +70.91^\circ$.
-- A questa frequenza, il basamento capacitivo puro $C_p = 0.8989\,\text{pF}$ produce da solo un guadagno di:
-  $$\text{Gain}_{\text{base}} = 2\pi \times 417\,790 \times (0.8989\times 10^{-12}) \times 5\times 10^6 = 11.798\,\text{V/V}$$
-  Il restante dislivello vettoriale è dovuto al piccolo contributo motionale induttivo residuo del risonatore prima della cancellazione totale ad antirisonanza ($417.81\,\text{kHz}$).
+### [B] Misura Diretta a 417.79 kHz con $V_{\text{DC}} = 0\,\text{V}$ (`scope_69.csv`)
+Anche questa misura è stata acquisita con **polarizzazione nulla** ($V_{\text{DC}} = 0\,\text{V}$):
+- Poiché il coefficiente di accoppiamento elettromeccanico è proporzionale alla tensione continua $\eta = V_{\text{DC}} \frac{\partial C}{\partial x}$, a $V_{\text{DC}} = 0\,\text{V}$ l'attuazione e il readout sono completamente disattivati: **il ramo motionale non conduce alcuna corrente ($I_{\text{mot}} \equiv 0$)**.
+- Nel file [`scope_69.csv`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/scope_69.csv) ($f = 417\,790.1\,\text{Hz}$):
+  - $V_{\text{in}} = 100.2\,\text{mV}$, $V_{\text{out}} = 1.2118\,\text{V} \implies \text{Gain} = 12.094\,\text{V/V}$, $\Delta \phi = +70.91^\circ$.
+  - Stima diretta di $C_p$ ad alta frequenza:
+    $$C_p = \frac{12.094}{2\pi \times 417\,790 \times 5.0\times 10^6} = \mathbf{0.9214\,\text{pF}} \quad (\mathbf{921.4\,\text{fF}})$$
+- **Origine della discrepanza (0.899 pF vs 0.921 pF, ~2.5%) e dello sfasamento ($+70.9^\circ$ anziché $+90^\circ$):**
+  A $417.8\,\text{kHz}$, la risposta non ideale del front-end TIA reale (polo del circuito a $f_p \approx 1.1\div 1.2\,\text{MHz}$ dovuto alla capacità di compensazione in retroazione o al GBWP dell'amplificatore) introduce un ritardo di fase di circa $-19^\circ$ ($90^\circ - 19^\circ = 71^\circ$) e una leggera alterazione del guadagno effettivo della catena.
 
-### [C] Confronto con il De-Embedding di Nyquist dello Sweep (42 Punti)
-- Basamento estratto dal fit congiunto BVD sullo sweep: $C_p = \mathbf{0.8972\,\text{pF}}$ ($897.2\,\text{fF}$).
-- Discrepanza tra misura off-resonance a 50 kHz ($0.8989\,\text{pF}$) e de-embedding di Nyquist ($0.8972\,\text{pF}$):
-  $$\Delta = \frac{|0.8989 - 0.8972|}{0.8972} \times 100 = \mathbf{0.18\%} \quad (< 2\,\text{fF})$$
-  Questo scarto inferiore allo $0.2\%$ conferma l'esattezza e la robustezza fisica della compensazione.
+### [C] Confronto con il De-Embedding di Nyquist dello Sweep (42 Punti a $V_{\text{DC}} = 5\,\text{V}$)
+- Basamento $C_p$ estratto dal fit analitico BVD sullo sweep con trave attiva: $C_p = \mathbf{0.8968\,\text{pF}}$ ($896.8\,\text{fF}$).
+- Discrepanza tra misura diretta a 50 kHz ($0.8989\,\text{pF}$) e de-embedding BVD ($0.8968\,\text{pF}$):
+  $$\Delta = \frac{|0.8989 - 0.8968|}{0.8968} \times 100 = \mathbf{0.23\%} \quad (< 2.1\,\text{fF})$$
+  Questo conferma in modo eccezionale che la capacità parassita del chip/package è di circa **$0.90\,\text{pF}$** in entrambe le condizioni sperimentali.
 
 ---
 

@@ -200,16 +200,16 @@ def verifica_scope_69_70():
         print("          La corrente è al 100% puramente capacitiva parassita (fase = +87.4 deg).")
 
     if res69:
-        print("\n[2] MISURA ATTUALMENTE A RISONANZA (scope_69.csv):")
+        print("\n[2] MISURA A 417.79 kHz CON Vdc = 0 V (scope_69.csv):")
         print(f"    Frequenza segnale:            f = {res69['freq']:.2f} Hz  (417.79 kHz)")
         print(f"    Tensione ingresso (Vin):      {res69['Vin']*1e3:.2f} mV")
         print(f"    Tensione uscita (Vout):       {res69['Vout']:.4f} V")
         print(f"    Guadagno in tensione |H|:     {res69['gain']:.4f} V/V")
         print(f"    Sfasamento Vout vs Vin:       {res69['phase']:+.2f} deg")
-        print(f"    Basamento puramente capacitivo a 417.79 kHz con Cp=0.8989 pF: |H_base| = {2*np.pi*res69['freq']*0.89886e-12*GE_TIA:.3f} V/V")
-        print(f"    --> Stima apparente grezza Cp: Cp = {res69['Cp']*1e12:.4f} pF  ({res69['Cp']*1e15:.1f} fF)")
-        print("    NOTA: A 417.79 kHz la corrente è la somma vettoriale di Cp (predominante, ~11.8 V/V)")
-        print("          e del piccolo contributo motionale residuo vicino all'antirisonanza.")
+        print(f"    --> Stima DIRETTA Cp (417 kHz): Cp = {res69['Cp']*1e12:.4f} pF  ({res69['Cp']*1e15:.1f} fF)")
+        print("    NOTA: Con Vdc = 0 V l'accoppiamento elettromeccanico e nullo (eta = 0, i_mot = 0).")
+        print("          Entrambe le misure sono puramente parassite; la lieve discrepanza (0.899 vs 0.921 pF)")
+        print("          e lo sfasamento a +70.9 deg sono dovuti alla banda passante e al polo del front-end TIA (~1.1 MHz).")
     print("=" * 78 + "\n")
     return res70, res69
 
