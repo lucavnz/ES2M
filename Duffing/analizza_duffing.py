@@ -271,11 +271,9 @@ def main():
 
     # A0 vs Vin con retta ideale
     ax1.plot(vin_dense, A0_ideal_lin, '--', color='#7f8c8d', linewidth=1.8,
-             label=rf'Fit lineare ($G = {slope_lin:.3f}\,\mathrm{{mV/mV}}$)')
+             label='Fit lineare')
     ax1.plot(vin_arr, A0_arr, 'o-', color='#2980b9', linewidth=2.0, markersize=5.5,
              label='Dati')
-    ax1.plot(vin_1db, A0_1db, '*', color='#e74c3c', markersize=11, zorder=6,
-             label=rf'Punto a $-1\,\mathrm{{dB}}$ ({vin_1db:.0f} mV)')
 
     ax1.set_title(r'Ampiezza ringdown vs tensione di eccitazione')
     ax1.set_xlabel(r'Tensione di eccitazione $V_{\mathrm{in}}$ [$\mathrm{mV}_{\mathrm{pp}}$]')
