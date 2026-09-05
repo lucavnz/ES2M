@@ -272,14 +272,8 @@ def main():
     ax2.plot(v_dense, f_dense_pred, '-', color='#e67e22', linewidth=2.0,
              label='Modello')
 
-    # Evidenzia la frequenza di eccitazione f_in usata dal generatore
-    ax2.axhline(F_IN, color='#8e44ad', linestyle='--', linewidth=1.6,
-                label=rf'Frequenza generatore $f_{{\mathrm{{in}}}}$ ({F_IN:.0f} Hz)')
-
-    # Trova il punto di incrocio esatto (dove f_res(Vdc) == f_in)
+    # Calcolo incrocio per uso nei grafici successivi
     vdc_cross = np.sqrt((f01_sq - F_IN**2) / m_slope)
-    ax2.plot(vdc_cross, F_IN, '*', color='#e74c3c', markersize=12, zorder=6,
-             label=rf'Risonanza ($V_{{\mathrm{{DC}}}} \approx {vdc_cross:.2f}$ V)')
 
     ax2.set_xlabel(r'Tensione continua $V_{\mathrm{DC}}$ [V]')
     ax2.set_ylabel(r'Frequenza di risonanza $f_1$ [Hz]')
