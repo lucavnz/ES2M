@@ -180,7 +180,7 @@ def main():
         misure_dir = os.path.abspath('Misure')
     misure_dir = os.path.abspath(misure_dir)
 
-    artifact_dir = os.path.join(r"C:\Users\lucaa\.gemini\antigravity-ide\brain\c1b594f5-2b9e-4778-a508-9112914d772f")
+    artifact_dir = os.path.join(r"C:\Users\lucaa\.gemini\antigravity-ide\brain\09561dde-e0ac-4dd9-b854-cf70ef8ce3ac")
     
     print("=" * 80)
     print("      ELABORAZIONE SPERIMENTALE RISPOSTA IN FREQUENZA DEL RINGDOWN")
@@ -270,66 +270,33 @@ def main():
     # =========================================================================
     # GRAFICO 1: CAMPANA DI RISONANZA A0 vs f_in e A0 vs Δ(f_in - fs)
     # =========================================================================
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5))
 
-    # Livello a meta potenza (-3dB = A_max / sqrt(2))
-    A_3dB = offset_lor + (A_max_fit - offset_lor) / np.sqrt(2.0)
-
-    # Pannello A: A0 vs f_in
-    ax1.plot(f_dense / 1e3, A0_dense_lor, color='#2980b9', linewidth=2.3,
-             label=rf'Fit Lorentziano ($f_{{\mathrm{{peak}}}} = {f_res_fit:.1f}$ Hz, $Q = {Q_from_fwhm:.0f}$)')
-    ax1.scatter(f_in_arr / 1e3, A0_arr, color='#c0392b', s=60, zorder=5, edgecolor='black', linewidth=0.8,
-                label='Punti Sperimentali $A_0$')
-    ax1.axhline(A_3dB, color='#27ae60', linestyle='--', linewidth=1.5,
-                label=rf'Livello $-3\,\mathrm{{dB}}$ ($A = {A_3dB:.1f}$ mV)')
-    ax1.axvline(f_res_fit / 1e3, color='#8e44ad', linestyle=':', linewidth=1.5,
-                label=rf'Picco Risonanza Forzata ({f_res_fit:.1f} Hz)')
-
-    # Annotazione zona stazionaria vs derivata massima
-    f_left_3dB = f_res_fit - gamma_fit / 2.0
-    f_right_3dB = f_res_fit + gamma_fit / 2.0
-    ax1.annotate(r'Zona stazionaria: $\frac{\mathrm{d}A}{\mathrm{d}f} \approx 0$',
-                 xy=(f_res_fit / 1e3, A_max_fit), xytext=(f_res_fit / 1e3 - 0.25, A_max_fit + 2.5),
-                 arrowprops=dict(arrowstyle='->', lw=1.2, color='black'),
-                 fontsize=9, fontweight='bold', bbox=dict(boxstyle='round,pad=0.3', fc='#f9e79f', ec='#b7950b'))
-    ax1.annotate(r'Massima pendenza $\left|\frac{\mathrm{d}A}{\mathrm{d}f}\right|$',
-                 xy=(f_left_3dB / 1e3, A_3dB), xytext=(f_left_3dB / 1e3 - 0.35, A_3dB - 8.0),
-                 arrowprops=dict(arrowstyle='->', lw=1.2, color='black'),
-                 fontsize=9, fontweight='bold', bbox=dict(boxstyle='round,pad=0.3', fc='#f5b7b1', ec='#c0392b'))
-
-    ax1.set_title(r'(A) Campana di Risonanza: $A_0$ vs Frequenza del Generatore $f_{\mathrm{in}}$', fontweight='bold', pad=10)
-    ax1.set_xlabel(r'Frequenza di Eccitazione $f_{\mathrm{in}}$ [kHz]', fontweight='bold')
-    ax1.set_ylabel(r'Ampiezza Iniziale Decadimento $A_0$ [mV]', fontweight='bold')
-    ax1.set_ylim([0, 43])
+    # Pannello 1: A0 vs f_in (Stile Bode grezzo: punti dello stesso colore del fit, niente bold, niente -3dB)
+    ax1.plot(f_in_arr / 1e3, A0_arr, 'o', color='#1f77b4', markersize=5.5, label='Dati')
+    ax1.plot(f_dense / 1e3, A0_dense_lor, '-', color='#1f77b4', lw=2.0, label='Fit')
+    ax1.set_title(r'Campana di risonanza con $f_{\mathrm{in}}$')
+    ax1.set_xlabel(r'Frequenza $f_{\mathrm{in}}$ [kHz]')
+    ax1.set_ylabel(r'Ampiezza decadimento $A_0$ [mV]')
+    ax1.set_ylim([0, 42])
     ax1.grid(True)
-    ax1.legend(loc='upper right', framealpha=0.92)
+    ax1.legend(loc='upper right', framealpha=0.95)
 
-    # Pannello B: A0 vs Δf = f_in - fs
+    # Pannello 2: A0 vs Δf = f_in - fs
     delta_dense = f_dense - mean_fs
-    delta_peak = f_res_fit - mean_fs
-    ax2.plot(delta_dense, A0_dense_lor, color='#16a085', linewidth=2.3, label='Fit Lorentziano centrato')
-    ax2.scatter(delta_f_arr, A0_arr, color='#d35400', s=60, zorder=5, edgecolor='black', linewidth=0.8,
-                label=r'Punti $A_0$ vs $\Delta f = f_{\mathrm{in}} - f_s^{(i)}$')
-    ax2.axvline(0, color='black', linestyle='-', linewidth=1.3, alpha=0.7,
-                label=r'Risonanza naturale libera $f_s$ ($\Delta f = 0$)')
-    ax2.axvline(delta_peak, color='#8e44ad', linestyle='--', linewidth=1.5,
-                label=rf'Picco forzato $\Delta f = {delta_peak:+.1f}$ Hz')
-    ax2.axhline(A_3dB, color='#27ae60', linestyle='--', linewidth=1.5)
-
-    ax2.set_title(r'(B) Risposta Centrata: $A_0$ vs $\Delta f = (f_{\mathrm{in}} - f_s^{(i)})$', fontweight='bold', pad=10)
-    ax2.set_xlabel(r'Scostamento Istantaneo dalla Risonanza Libera $\Delta f$ [Hz]', fontweight='bold')
-    ax2.set_ylabel(r'Ampiezza Iniziale $A_0$ [mV]', fontweight='bold')
-    ax2.set_ylim([0, 43])
+    ax2.plot(delta_f_arr, A0_arr, 'o', color='#1f77b4', markersize=5.5, label='Dati')
+    ax2.plot(delta_dense, A0_dense_lor, '-', color='#1f77b4', lw=2.0, label='Fit')
+    ax2.set_title(r'Campana di risonanza con $\Delta f = f_{\mathrm{in}} - f_s$')
+    ax2.set_xlabel(r'Scostamento in frequenza $\Delta f$ [Hz]')
+    ax2.set_ylabel(r'Ampiezza decadimento $A_0$ [mV]')
+    ax2.set_ylim([0, 42])
     ax2.grid(True)
-    ax2.legend(loc='upper right', framealpha=0.92)
+    ax2.legend(loc='upper right', framealpha=0.95)
 
-    fig.suptitle('Caratterizzazione Risposta in Frequenza del Decadimento Libero (Ringdown)\n'
-                 r'$V_{\mathrm{DC}} = 5.0\,\mathrm{V},\, V_{\mathrm{in}} = 100\,\mathrm{mV}_{\mathrm{pp}},\, \mathrm{Burst} = 2500\,\mathrm{cicli},\, T_g = 12\,\mathrm{ms}$',
-                 fontsize=13, fontweight='bold', y=1.02)
-    plt.tight_layout()
+    fig.tight_layout()
     fig1_path = os.path.join(base_dir, 'campana_risonanza_A0_vs_freq.png')
-    plt.savefig(fig1_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.savefig(fig1_path, dpi=300)
+    plt.close(fig)
     print(f"[GRAFICO 1 GENERATO] {fig1_path}")
 
     # =========================================================================
@@ -391,42 +358,36 @@ def main():
     # =========================================================================
     # GRAFICO 3: GALLERIA COMPARATIVA FORME D'ONDA ED INVILUPPI
     # =========================================================================
-    fig, axes = plt.subplots(2, 2, figsize=(15, 9), sharex=True, sharey=True)
+    fig, axes = plt.subplots(2, 2, figsize=(14, 8), sharex=True, sharey=True)
     selected_files = [17, 13, 19, 29]
-    titles = [
-        f"Lontano Sotto Risonanza: scope_17 ($f_{{\\mathrm{{in}}}} = {FILE_FREQ_MAP[17]:.0f}$ Hz, $\\Delta f = -593$ Hz)",
-        f"Fianco Sinistro a -3dB: scope_13 ($f_{{\\mathrm{{in}}}} = {FILE_FREQ_MAP[13]:.0f}$ Hz, $\\Delta f = -145$ Hz)",
-        f"Al Vertice della Risonanza: scope_19 ($f_{{\\mathrm{{in}}}} = {FILE_FREQ_MAP[19]:.0f}$ Hz, $\\Delta f = +1.7$ Hz)",
-        f"Lontano Sopra Risonanza: scope_29 ($f_{{\\mathrm{{in}}}} = {FILE_FREQ_MAP[29]:.0f}$ Hz, $\\Delta f = +551$ Hz)"
-    ]
 
-    for ax, num, title in zip(axes.flatten(), selected_files, titles):
+    for ax, num in zip(axes.flatten(), selected_files):
         res_sel = next(r for r in results if r['file_num'] == num)
         t_ms = res_sel['t_rd_ms']
         y_mV = res_sel['y_ac_mV']
         env_mV = res_sel['env_mV']
         fit_mV = res_sel['fit_mV']
 
-        ax.plot(t_ms, y_mV, color='#bdc3c7', alpha=0.6, linewidth=0.6, label='Segnale Oscilloscopio (AC)')
-        ax.plot(t_ms, env_mV, color='#e67e22', linewidth=1.8, label='Inviluppo di Hilbert')
-        ax.plot(t_ms, fit_mV, color='#c0392b', linestyle='--', linewidth=2.2,
-                label=rf'Fit Esponenziale: $A_0 = {res_sel["A0_mV"]:.1f}\,\mathrm{{mV}},\,\tau = {res_sel["tau_ms"]:.2f}\,\mathrm{{ms}}$')
+        ax.plot(t_ms, y_mV, color='#bdc3c7', alpha=0.6, linewidth=0.6)
+        ax.plot(t_ms, env_mV, color='#e67e22', linewidth=1.8)
+        ax.plot(t_ms, fit_mV, color='#c0392b', linestyle='--', linewidth=2.0)
 
-        ax.set_title(title, fontweight='bold', fontsize=10.5)
-        ax.set_xlabel('Tempo dal taglio del Gate [ms]', fontweight='bold')
-        ax.set_ylabel('Uscita TIA [mV]', fontweight='bold')
         ax.grid(True)
-        ax.legend(loc='upper right', framealpha=0.9, fontsize=8.5)
         ax.set_xlim([0, 4.5])
         ax.set_ylim([-45, 45])
 
-    fig.suptitle('Confronto Decadimenti Ringdown a Diverse Frequenze di Eccitazione\n'
-                 r'(Stessa Pendenza $\tau$, Ampiezza di Partenza $A_0$ Modulata dalla Curva di Risonanza Meccanica)',
-                 fontsize=13, fontweight='bold', y=0.99)
-    plt.tight_layout()
+    # Etichette assi senza bold sui bordi esterni
+    for ax in axes[-1, :]:
+        ax.set_xlabel('Tempo dal taglio del gate [ms]')
+    for ax in axes[:, 0]:
+        ax.set_ylabel('Uscita TIA [mV]')
+
+    fig.suptitle("Esempi ringdown e fit dell'inviluppo", fontsize=13)
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.93)
     fig3_path = os.path.join(base_dir, 'gallery_inviluppi_ringdown.png')
-    plt.savefig(fig3_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.savefig(fig3_path, dpi=300)
+    plt.close(fig)
     print(f"[GRAFICO 3 GENERATO] {fig3_path}")
 
     # =========================================================================
