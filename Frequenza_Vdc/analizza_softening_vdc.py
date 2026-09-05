@@ -245,57 +245,53 @@ def main():
     # -------------------------------------------------------------------------
     # GRAFICO 1: LEGGE DI SOFTENING ELETTROSTATICO (f_res^2 vs Vdc^2 e f_res vs Vdc)
     # -------------------------------------------------------------------------
-    fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5))
+    fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
 
     # Pannello A: f_res^2 vs Vdc^2 (Teoricamente una retta esatta)
     v2_dense = np.linspace(0, 40, 200)
     f2_dense_pred = f01_sq - m_slope * v2_dense
 
-    ax1.plot(vdc2_arr, f_res2_arr * 1e-10, 'o', color='#2980b9', markersize=8,
-             label='Dati Sperimentali (da Ringdown FFT)', zorder=5)
-    ax1.plot(v2_dense, f2_dense_pred * 1e-10, '-', color='#c0392b', linewidth=2.2,
-             label=rf'Fit Lineare: $f_1^2 = f_{{01}}^2 - m V_{{\mathrm{{DC}}}}^2$' + '\n' +
-                   rf'($f_{{01}} = {f01_mech:.1f}\,\mathrm{{Hz}},\,R^2 = {r2_soft:.5f}$)')
+    ax1.plot(vdc2_arr, f_res2_arr * 1e-10, 'o', color='#2980b9', markersize=6.5,
+             label='Dati', zorder=5)
+    ax1.plot(v2_dense, f2_dense_pred * 1e-10, '-', color='#c0392b', linewidth=2.0,
+             label='Fit lineare')
 
-    ax1.set_xlabel(r'$V_{\mathrm{DC}}^2\ [\mathrm{V}^2]$', fontweight='bold')
-    ax1.set_ylabel(r'$f_1^2\ [10^{10}\ \mathrm{Hz}^2]$', fontweight='bold')
-    ax1.set_title(r'Verifica Diretta Legge di Softening Elettrostatico ($f_1^2$ vs $V_{\mathrm{DC}}^2$)', fontweight='bold')
+    ax1.set_xlabel(r'$V_{\mathrm{DC}}^2$ [$\mathrm{V}^2$]')
+    ax1.set_ylabel(r'$f_1^2$ [$10^{10}\ \mathrm{Hz}^2$]')
+    ax1.set_title(r'Legge di softening elettrostatico ($f_1^2$ vs $V_{\mathrm{DC}}^2$)')
     ax1.grid(True)
-    ax1.legend(framealpha=0.9)
+    ax1.legend(framealpha=0.95)
     ax1.set_xlim([0, 38])
 
     # Pannello B: f_res vs Vdc (Curva parabolica reale)
     v_dense = np.linspace(0, 6.5, 200)
     f_dense_pred = np.sqrt(np.maximum(0, f01_sq - m_slope * (v_dense**2)))
 
-    ax2.plot(vdc_arr, f_res_arr, 's', color='#27ae60', markersize=8,
-             label='Frequenza Naturale Misurata', zorder=5)
-    ax2.plot(v_dense, f_dense_pred, '-', color='#e67e22', linewidth=2.2,
-             label=rf'Modello: $f_1(V_{{\mathrm{{DC}}}}) = \sqrt{{f_{{01}}^2 - \frac{{c_{{1,DD}}}}{{(2\pi)^2}} V_{{\mathrm{{DC}}}}^2}}$')
+    ax2.plot(vdc_arr, f_res_arr, 's', color='#27ae60', markersize=6.5,
+             label='Dati', zorder=5)
+    ax2.plot(v_dense, f_dense_pred, '-', color='#e67e22', linewidth=2.0,
+             label='Modello')
 
     # Evidenzia la frequenza di eccitazione f_in usata dal generatore
-    ax2.axhline(F_IN, color='#8e44ad', linestyle='--', linewidth=1.8,
-                label=rf'$f_{{\mathrm{{in}}}} = {F_IN:.0f}\,\mathrm{{Hz}}$ (Frequenza Generatore RF)')
+    ax2.axhline(F_IN, color='#8e44ad', linestyle='--', linewidth=1.6,
+                label=rf'Frequenza generatore $f_{{\mathrm{{in}}}}$ ({F_IN:.0f} Hz)')
 
     # Trova il punto di incrocio esatto (dove f_res(Vdc) == f_in)
     vdc_cross = np.sqrt((f01_sq - F_IN**2) / m_slope)
-    ax2.plot(vdc_cross, F_IN, '*', color='#e74c3c', markersize=14, zorder=6,
-             label=rf'Risonanza Esatta: $V_{{\mathrm{{DC}}}} \approx {vdc_cross:.2f}\,\mathrm{{V}}$')
+    ax2.plot(vdc_cross, F_IN, '*', color='#e74c3c', markersize=12, zorder=6,
+             label=rf'Risonanza ($V_{{\mathrm{{DC}}}} \approx {vdc_cross:.2f}$ V)')
 
-    ax2.set_xlabel(r'$Tensione\ Continua\ V_{\mathrm{DC}}\ [\mathrm{V}]$', fontweight='bold')
-    ax2.set_ylabel(r'Frequenza di Risonanza $f_1\ [\mathrm{Hz}]$', fontweight='bold')
-    ax2.set_title(r'Spostamento della Risonanza Verso il Basso per Softening ($\Delta f \approx -163\,\mathrm{Hz}$)', fontweight='bold')
+    ax2.set_xlabel(r'Tensione continua $V_{\mathrm{DC}}$ [V]')
+    ax2.set_ylabel(r'Frequenza di risonanza $f_1$ [Hz]')
+    ax2.set_title(r'Frequenza di risonanza vs $V_{\mathrm{DC}}$')
     ax2.grid(True)
-    ax2.legend(framealpha=0.9)
+    ax2.legend(framealpha=0.95)
     ax2.set_xlim([0, 6.5])
     ax2.set_ylim([417700, 418050])
 
-    fig1.suptitle('Caratterizzazione Sperimentale del Softening Elettrostatico (MEMS ad Arco)\n'
-                  rf'Verifica Modello $k_{{\mathrm{{eff}}}} = c_{{1,\beta}} - c_{{1,DD}} V_{{\mathrm{{DC}}}}^2$',
-                  fontsize=13, fontweight='bold', y=1.00)
     plt.tight_layout()
     fig1_path = os.path.join(base_dir, 'softening_legge_quadratica.png')
-    plt.savefig(fig1_path, dpi=300, bbox_inches='tight')
+    plt.savefig(fig1_path, dpi=300)
     plt.close()
     print(f"Grafico 1 salvato: {fig1_path}")
 
