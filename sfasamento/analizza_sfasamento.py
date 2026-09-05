@@ -700,10 +700,61 @@ def analizza_e_plotta(data_list, res70=None):
     print(f"-> Grafico Nyquist salvato in: {nyquist_path}")
 
 
+def plot_calcolo_cp():
+    """
+    Genera il grafico 'calcolo_Cp.png' con i segnali Vin e Vout a 50 kHz
+    (off-resonance, scope_70) e a 417.79 kHz (prossimità risonanza, scope_69).
+    """
+    p70 = os.path.join(SCRIPT_DIR, 'scope_70.csv')
+    p69 = os.path.join(SCRIPT_DIR, 'scope_69.csv')
+    if not os.path.exists(p70) or not os.path.exists(p69):
+        return
+
+    d70 = np.loadtxt(p70, delimiter=',', skiprows=2)
+    t70 = (d70[:, 0] - d70[0, 0]) * 1e6
+    vout70 = d70[:, 1]
+    vin70 = d70[:, 3]
+
+    d69 = np.loadtxt(p69, delimiter=',', skiprows=2)
+    t69 = (d69[:, 0] - d69[0, 0]) * 1e6
+    vout69 = d69[:, 1]
+    vin69 = d69[:, 3]
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7.5))
+
+    ax1.plot(t70, vin70, label='Vin', color='#1f77b4')
+    ax1.plot(t70, vout70, label='Vout', color='#d62728')
+    ax1.set_title('50 kHz (Off-resonance)')
+    ax1.set_xlabel(r'Tempo [$\mu$s]')
+    ax1.set_ylabel('Segnali')
+    ax1.grid(True)
+    ax1.legend(loc='upper right', framealpha=0.95)
+
+    ax2.plot(t69, vin69, label='Vin', color='#1f77b4')
+    ax2.plot(t69, vout69, label='Vout', color='#d62728')
+    ax2.set_title('417.79 kHz (Frequenza vicina alla risonanza)')
+    ax2.set_xlabel(r'Tempo [$\mu$s]')
+    ax2.set_ylabel('Segnali')
+    ax2.grid(True)
+    ax2.legend(loc='upper right', framealpha=0.95)
+
+    fig.suptitle('Calcolo Cp', fontsize=14, fontweight='bold')
+    fig.tight_layout()
+
+    out_cp = os.path.join(SCRIPT_DIR, 'calcolo_Cp.png')
+    out_cp_lower = os.path.join(SCRIPT_DIR, 'calcolo_cp.png')
+    fig.savefig(out_cp, dpi=300)
+    fig.savefig(out_cp_lower, dpi=300)
+    plt.close(fig)
+    print(f"-> Grafico Calcolo Cp salvato in: {out_cp}")
+
+
 if __name__ == '__main__':
     import sys
     recompute = '--recompute' in sys.argv or '-f' in sys.argv
     res70, res69 = verifica_scope_69_70()
+    plot_calcolo_cp()
     dati = elabora_misure(force_recompute=recompute)
     analizza_e_plotta(dati, res70=res70)
+
 

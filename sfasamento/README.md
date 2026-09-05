@@ -86,6 +86,7 @@ si isola la risposta puramente meccanica del ramo serie RLC ($R_m - L_m - C_m$):
 
 Lo script Python completo per l'estrazione dati, calcolo fasoriale, fit BVD e de-embedding è:
 - **[`analizza_sfasamento.py`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/analizza_sfasamento.py)**
+- **[`plot_calcolo_cp.py`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/plot_calcolo_cp.py)** (script dedicato per plottare i segnali temporali $V_{\text{in}}$ e $V_{\text{out}}$ di `scope_70` e `scope_69`)
 
 ### Modalità d'uso:
 ```bash
@@ -94,25 +95,34 @@ py -3 analizza_sfasamento.py
 
 # Ricalcolo completo dai file scope grezzi:
 py -3 analizza_sfasamento.py --recompute
+
+# Generazione immediata del solo grafico 'Calcolo Cp' (50 kHz e 417.8 kHz):
+py -3 plot_calcolo_cp.py
 ```
 
 ---
 
 ## 5. Galleria dei Grafici Generati
 
-1. **[`bode_ampiezza_fase.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase.png)** e **[`bode_ampiezza_fase_compensato.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase_compensato.png)**:
+1. **[`calcolo_Cp.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/calcolo_Cp.png)**:
+   - Titolo: *"Calcolo Cp"*
+   - Mostra il confronto diretto delle forme d'onda temporali $V_{\text{in}}$ e $V_{\text{out}}$:
+     - Riquadro superiore: $50\,\text{kHz}$ off-resonance (`scope_70.csv`), sfasamento di $+87.4^\circ$ puramente capacitivo da cui si calcola $C_p = 0.8989\,\text{pF}$.
+     - Riquadro inferiore: $417.79\,\text{kHz}$ in prossimità della risonanza/antirisonanza (`scope_69.csv`).
+2. **[`bode_ampiezza_fase.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase.png)** e **[`bode_ampiezza_fase_compensato.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase_compensato.png)**:
    - Titolo: *"Risposta compensata da Cp"*
    - Asse verticale: *"Guadagno senza Cp (compensata)"* e *"Sfasamento"*
    - Curve: Dati (37 punti coerenti Serie 1) e Fit lorentziano puro con transizione di fase RLC.
-2. **[`bode_ampiezza_fase_grezzo.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase_grezzo.png)**:
+3. **[`bode_ampiezza_fase_grezzo.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase_grezzo.png)**:
    - Titolo: *"Risposta in frequenza"*
    - Curve: Dati (esclusi gli scope 139..143 affetti da deriva termica) e Fit BVD analitico (risonanza di Fano).
-3. **[`bode_ampiezza_fase_compensato_zoom.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase_compensato_zoom.png)**:
+4. **[`bode_ampiezza_fase_compensato_zoom.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_ampiezza_fase_compensato_zoom.png)**:
    - Dettaglio ad alta risoluzione nella banda di risonanza ($417.4 \div 418.1\,\text{kHz}$) pulito e coerente.
-4. **[`bode_confronto_completo.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_confronto_completo.png)**:
+5. **[`bode_confronto_completo.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/bode_confronto_completo.png)**:
    - Pannello di confronto $2\times 2$ completo (Risposta Grezza vs Risposta Compensata).
-5. **[`deembedding_confronto.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/deembedding_confronto.png)**:
+6. **[`deembedding_confronto.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/deembedding_confronto.png)**:
    - Confronto orizzontale Before & After sui moduli.
-6. **[`piano_complesso_nyquist.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/piano_complesso_nyquist.png)**:
+7. **[`piano_complesso_nyquist.png`](file:///c:/Users/lucaa/Downloads/ESM2/ES2M/sfasamento/piano_complesso_nyquist.png)**:
    - Diagramma nel piano complesso di Nyquist con il cerchio di risonanza isolato e centrato sull'asse reale.
+
 
