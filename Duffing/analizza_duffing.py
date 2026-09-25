@@ -31,25 +31,26 @@ plt.rcParams.update({
     'grid.linestyle': ':'
 })
 
-# Mappatura delle tensioni Vin impostate sul generatore per ciascun file
+# Mappatura delle tensioni reali Vin applicate al risonatore MEMS
+# (Generatore calibrato su 50 Ohm connesso a carico High-Z: Vin_reale = 2 * Vin_nominale)
 DUFFING_MAP = {
-    49: 40.0,
-    51: 60.0,
-    52: 80.0,
-    53: 100.0,
-    54: 120.0,
-    55: 140.0,
-    56: 170.0,
-    57: 210.0,
-    58: 250.0,
-    59: 300.0,
-    60: 350.0,
-    61: 400.0,
-    62: 450.0,
-    63: 500.0,
-    64: 600.0,
-    65: 750.0,
-    66: 1000.0
+    49: 80.0,
+    51: 120.0,
+    52: 160.0,
+    53: 200.0,
+    54: 240.0,
+    55: 280.0,
+    56: 340.0,
+    57: 420.0,
+    58: 500.0,
+    59: 600.0,
+    60: 700.0,
+    61: 800.0,
+    62: 900.0,
+    63: 1000.0,
+    64: 1200.0,
+    65: 1500.0,
+    66: 2000.0
 }
 
 def exp_decay(t, A0, tau, offset):
@@ -188,7 +189,7 @@ def main():
     misure_dir = os.path.join(base_dir, 'Misure')
     if not os.path.exists(misure_dir):
         misure_dir = os.path.abspath('Duffing/Misure')
-    artifact_dir = os.path.join(r"C:\Users\lucaa\.gemini\antigravity-ide\brain\c1b594f5-2b9e-4778-a508-9112914d772f")
+    artifact_dir = os.path.join(r"C:\Users\lucaa\.gemini\antigravity-ide\brain\ec5d88fb-3a1f-4053-a354-563659895c42")
 
     print("=" * 80)
     print("      ANALISI SPERIMENTALE NON-LINEARITA DI DUFFING (MEMS ES2M)")
@@ -238,13 +239,13 @@ def main():
     Q_arr = np.array([r['Q'] for r in results])
     fs_arr = np.array([r['fs_rd'] for r in results])
 
-    # Fit lineare a piccolo segnale (Vin <= 140 mV)
-    mask_lin = vin_arr <= 140.0
+    # Fit lineare a piccolo segnale (Vin <= 280 mV, corrispondente ai primi 6 file)
+    mask_lin = vin_arr <= 280.0
     p_lin = np.polyfit(vin_arr[mask_lin], A0_arr[mask_lin], 1)
     slope_lin = p_lin[0]  # Guadagno piccolo segnale [mV_out / mV_in]
     offset_lin = p_lin[1]
 
-    vin_dense = np.linspace(0, 1050, 1000)
+    vin_dense = np.linspace(0, 2100, 1000)
     A0_ideal_lin = slope_lin * vin_dense + offset_lin
 
     # Punto di compressione a -1 dB (A0 reale = 89.1% di quello ideale lineare)
@@ -255,13 +256,13 @@ def main():
         vin_1db = vin_arr[idx_comp_1db[0]]
         A0_1db = A0_arr[idx_comp_1db[0]]
     else:
-        vin_1db = 250.0
+        vin_1db = 500.0
         A0_1db = 50.0
 
     print("\n--- PARAMETRI LINEARITA E COMPRESSIONE DUFFING ---")
     print(f" Guadagno a Piccolo Segnale: {slope_lin:.4f} mV_out / mV_in")
     print(f" Punto di Compressione -1dB: Vin ~ {vin_1db:.0f} mV (A0 = {A0_1db:.1f} mV)")
-    print(f" Escursione Frequenza fs:    da {fs_arr[0]:.2f} Hz (a 40mV) a {fs_arr[-1]:.2f} Hz (a 1000mV)")
+    print(f" Escursione Frequenza fs:    da {fs_arr[0]:.2f} Hz (a 80mV) a {fs_arr[-1]:.2f} Hz (a 2000mV)")
     print(f" Shift Softening Massimo:    Delta_fs = {fs_arr[-1] - fs_arr[0]:.2f} Hz")
 
     # =========================================================================
@@ -278,7 +279,7 @@ def main():
     ax1.set_title(r'Ampiezza ringdown vs tensione di eccitazione')
     ax1.set_xlabel(r'Tensione di eccitazione $V_{\mathrm{in}}$ [$\mathrm{mV}_{\mathrm{pp}}$]')
     ax1.set_ylabel(r'Ampiezza iniziale ringdown $A_0$ [mV]')
-    ax1.set_xlim([0, 1050])
+    ax1.set_xlim([0, 2100])
     ax1.set_ylim([0, 300])
     ax1.grid(True)
     ax1.legend(loc='upper left', framealpha=0.95)
@@ -297,15 +298,15 @@ def main():
     # Pannello A: fs vs Vin
     delta_fs_arr = fs_arr - fs_arr[0]
     ax1.plot(vin_arr, fs_arr, 'o-', color='#c0392b', linewidth=2.2, markersize=6.5,
-             label=rf'Frequenza $f_s$ misurata dal ringdown')
-    ax1.set_title(r'(A) Frequenza di Oscillazione Libera $f_s$ vs $V_{\mathrm{in}}$', fontweight='bold', pad=10)
+             label=rf'Frequenza $f_1$ misurata dal ringdown')
+    ax1.set_title(r'(A) Frequenza di Risonanza $f_1$ vs $V_{\mathrm{in}}$', fontweight='bold', pad=10)
     ax1.set_xlabel(r'Tensione di Eccitazione $V_{\mathrm{in}}$ [$\mathrm{mV}_{\mathrm{pp}}$]', fontweight='bold')
-    ax1.set_ylabel(r'Frequenza Naturale $f_s$ [Hz]', fontweight='bold')
+    ax1.set_ylabel(r'Frequenza di Risonanza $f_1$ [Hz]', fontweight='bold')
     ax1.grid(True)
     ax1.legend(loc='lower left', framealpha=0.92)
 
-    ax1.annotate(rf'Shift Softening Totale: $\Delta f_s = {delta_fs_arr[-1]:.1f}\,\mathrm{{Hz}}$',
-                 xy=(vin_arr[-1], fs_arr[-1]), xytext=(vin_arr[-1] - 400, fs_arr[-1] + 8),
+    ax1.annotate(rf'Shift Softening Totale: $\Delta f_1 = {delta_fs_arr[-1]:.1f}\,\mathrm{{Hz}}$',
+                 xy=(vin_arr[-1], fs_arr[-1]), xytext=(vin_arr[-1] - 800, fs_arr[-1] + 8),
                  arrowprops=dict(arrowstyle='->', lw=1.2, color='black'),
                  fontsize=9, fontweight='bold', bbox=dict(boxstyle='round,pad=0.3', fc='#fcf3cf', ec='#f39c12'))
 
@@ -318,18 +319,18 @@ def main():
     A_dense_sq = np.linspace(0, np.max(A0_sq)*1.05, 500)
     fs_duff_fit = f0_duff + beta_duff * A_dense_sq
 
-    ax2.plot(A0_sq, fs_arr, 's', color='#d35400', markersize=7, zorder=5, label='Punti Sperimentali $f_s$ vs $A_0^2$')
+    ax2.plot(A0_sq, fs_arr, 's', color='#d35400', markersize=7, zorder=5, label='Punti Sperimentali $f_1$ vs $A_0^2$')
     ax2.plot(A_dense_sq, fs_duff_fit, color='#2c3e50', linewidth=2.0,
              label=rf'Fit Parabola Duffing: $\beta = {beta_duff*1e3:.3f}\times 10^{{-3}}\,\mathrm{{Hz/mV^2}}$')
 
-    ax2.set_title(r'(B) Legge Parabolica di Duffing: $f_s = f_0 + \beta \cdot A_0^2$', fontweight='bold', pad=10)
+    ax2.set_title(r'(B) Legge Parabolica di Duffing: $f_1 = f_{1,\mathrm{lin}} + \beta \cdot A_0^2$', fontweight='bold', pad=10)
     ax2.set_xlabel(r'Quadrato Ampiezza Iniziale $A_0^2$ [$\mathrm{mV}^2$]', fontweight='bold')
-    ax2.set_ylabel(r'Frequenza Naturale $f_s$ [Hz]', fontweight='bold')
+    ax2.set_ylabel(r'Frequenza di Risonanza $f_1$ [Hz]', fontweight='bold')
     ax2.grid(True)
     ax2.legend(loc='lower left', framealpha=0.92)
 
     fig.suptitle('Evidenza Sperimentale dello Spring Softening Non-Lineare di Duffing\n'
-                 r'Verifica della Dipendenza Quadratica della Frequenza dall\'Ampiezza ($k_3 < 0$)',
+                 r"Verifica della Dipendenza Quadratica della Frequenza dall'Ampiezza ($k_3 < 0$)",
                  fontsize=13, fontweight='bold', y=1.02)
     plt.tight_layout()
     fig2_path = os.path.join(base_dir, 'duffing_spostamento_frequenza_softening.png')
@@ -345,15 +346,15 @@ def main():
     # Evoluzione temporale di f_inst(t) lungo il ringdown (Chirp)
     sel_files_bb = [53, 58, 63, 66]
     colors_bb = ['#27ae60', '#f39c12', '#e67e22', '#c0392b']
-    labels_bb = ['100 mV', '250 mV', '500 mV', '1000 mV']
+    labels_bb = [r'200\,\mathrm{mV}', r'500\,\mathrm{mV}', r'1000\,\mathrm{mV}', r'2000\,\mathrm{mV}']
 
     for num_sel, col, lab in zip(sel_files_bb, colors_bb, labels_bb):
         r_sel = next(r for r in results if r['file_num'] == num_sel)
         ax1.plot(r_sel['t_bb'], r_sel['f_bb'], color=col, linewidth=2.0, label=rf'$V_{{\mathrm{{in}}}} = {lab}$')
 
-    ax1.set_title(r'Chirp intra-ringdown: frequenza istantanea nel tempo')
+    ax1.set_title(r'Frequenza di risonanza $f_1$ nel tempo')
     ax1.set_xlabel('Tempo dal taglio del gate [ms]')
-    ax1.set_ylabel(r'Frequenza istantanea $f_{\mathrm{inst}}$ [Hz]')
+    ax1.set_ylabel(r'Frequenza di risonanza $f_1$ [Hz]')
     ax1.set_xlim([0.3, 3.8])
     ax1.grid(True)
     ax1.legend(loc='lower right', framealpha=0.95)
@@ -398,7 +399,7 @@ def main():
     ax2.plot(t_plot, res_58['fit_mV'], '--', color='#2c3e50', linewidth=2.0,
              label=rf'Fit Esponenziale ($A_0 = {res_58["A0_mV"]:.1f}\,\mathrm{{mV}},\,R^2 = {res_58["r2"]:.4f}$)')
 
-    ax2.set_title(r'(B) Risoluzione Fisica Transitorio Oscilloscopio su scope_58 ($250\,\mathrm{mV}$)',
+    ax2.set_title(r'(B) Risoluzione Fisica Transitorio Oscilloscopio su scope_58 ($500\,\mathrm{mV}$)',
                   fontweight='bold', pad=10)
     ax2.set_xlabel(r'Tempo dal Taglio del Gate [ms]', fontweight='bold')
     ax2.set_ylabel(r'Tensione [mV]', fontweight='bold')

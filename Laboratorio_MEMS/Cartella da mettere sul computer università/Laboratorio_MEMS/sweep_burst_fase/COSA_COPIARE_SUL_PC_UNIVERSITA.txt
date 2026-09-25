@@ -1,0 +1,54 @@
+================================================================================
+ COSA COPIARE SUL COMPUTER DELL'UNIVERSITA' (CHIAVETTA USB)
+================================================================================
+
+Esistono due situazioni tipiche:
+
+--------------------------------------------------------------------------------
+CASO A: Sul PC dell'universita' (o sulla chiavetta) hai GIA' la cartella 
+        "Laboratorio_MEMS" con dentro la cartella "python" portatile
+--------------------------------------------------------------------------------
+NON devi ricopiare tutto! Ti basta copiare SOLAMENTE:
+  1. La cartella:
+     Laboratorio_MEMS\sweep_burst_fase\
+  2. Il file batch rapido:
+     Laboratorio_MEMS\avvia_sweep_burst_fase.bat
+
+Fatto! All'universita' apri "Laboratorio_MEMS" e fai doppio clic su:
+  -> avvia_sweep_burst_fase.bat
+
+
+--------------------------------------------------------------------------------
+CASO B: Stai preparando una NUOVA chiavetta USB da zero
+--------------------------------------------------------------------------------
+In questo caso, copia l'intera cartella:
+  -> Laboratorio_MEMS
+
+Essa contiene:
+  - python\                      (l'ambiente Python portatile con PyVISA)
+  - sweep_burst_fase\            (lo script di sweep burst phase e acquisizione)
+  - avvia_sweep_burst_fase.bat   (il launcher rapido a doppio clic)
+  - gli altri sweep (frequenza, sweep_DC, ecc. se ti servono)
+
+Non serve installare alcun software (Python, driver o librerie) sul computer
+dell'universita': tutto viene eseguito direttamente dalla chiavetta USB.
+
+================================================================================
+ RIEPILOGO FUNZIONAMENTO DELLO SCRIPT
+================================================================================
+1. Avvio: doppio clic su 'avvia_sweep_burst_fase.bat'.
+2. Parametri (basta premere INVIO per i default o scrivere il valore desiderato):
+   - Fase iniziale [default: -180.0°]
+   - Fase finale   [default: +180.0°]
+   - Passo di fase [default: 5.0°]
+   - Medie hardware oscilloscopio [default: 32]
+   - Campioni CSV per canale [default: 10000 punti]
+   - Salvare screenshot display [default: S]
+3. Lo script:
+   - Configura Agilent 33220A in Burst con trigger interno (:BURSt:MODE TRIG, :TRIG:SOUR INT).
+   - Esegue lo sweep impostando la fase (:BURSt:PHASe <gradi>).
+   - Attende con handshake hardware (*OPC?) che l'oscilloscopio completi tutte le medie.
+   - Scarica le forme d'onda (CH1 Vout e CH3 Vin) a 10.000 campioni e le salva in CSV.
+   - Cattura lo screenshot a colori del display e lo salva in PNG.
+   - Crea un file master 'riepilogo_sweep_burst_fase.csv' con tutti i valori e indici.
+================================================================================

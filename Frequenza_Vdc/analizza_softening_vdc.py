@@ -258,7 +258,7 @@ def main():
 
     ax1.set_xlabel(r'$V_{\mathrm{DC}}^2$ [$\mathrm{V}^2$]')
     ax1.set_ylabel(r'$f_1^2$ [$10^{10}\ \mathrm{Hz}^2$]')
-    ax1.set_title(r'Legge di softening elettrostatico ($f_1^2$ vs $V_{\mathrm{DC}}^2$)')
+    ax1.set_title(r'$f_1^2$ vs $V_{\mathrm{DC}}^2$')
     ax1.grid(True)
     ax1.legend(framealpha=0.95)
     ax1.set_xlim([0, 38])
@@ -270,14 +270,14 @@ def main():
     ax2.plot(vdc_arr, f_res_arr, 's', color='#27ae60', markersize=6.5,
              label='Dati', zorder=5)
     ax2.plot(v_dense, f_dense_pred, '-', color='#e67e22', linewidth=2.0,
-             label='Modello')
+             label='Fit lineare')
 
     # Calcolo incrocio per uso nei grafici successivi
     vdc_cross = np.sqrt((f01_sq - F_IN**2) / m_slope)
 
-    ax2.set_xlabel(r'Tensione continua $V_{\mathrm{DC}}$ [V]')
-    ax2.set_ylabel(r'Frequenza di risonanza $f_1$ [Hz]')
-    ax2.set_title(r'Frequenza di risonanza vs $V_{\mathrm{DC}}$')
+    ax2.set_xlabel(r'$V_{\mathrm{DC}}$ [V]')
+    ax2.set_ylabel(r'$f_1$ [Hz]')
+    ax2.set_title(r'$f_1$ vs $V_{\mathrm{DC}}$')
     ax2.grid(True)
     ax2.legend(framealpha=0.95)
     ax2.set_xlim([0, 6.5])

@@ -41,7 +41,7 @@ plt.rcParams.update({
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MISURE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'Misure'))
 CSV_TABLE = os.path.join(SCRIPT_DIR, 'tabella_risultati_ringdown.csv')
-ARTIFACT_DIR = r"C:\Users\lucaa\.gemini\antigravity-ide\brain\09561dde-e0ac-4dd9-b854-cf70ef8ce3ac"
+ARTIFACT_DIR = r"C:\Users\lucaa\.gemini\antigravity-ide\brain\ec5d88fb-3a1f-4053-a354-563659895c42"
 
 def exp_decay(t, A0, tau, offset):
     return A0 * np.exp(-t / tau) + offset
@@ -76,27 +76,17 @@ def plot_campana_risonanza():
     A0_dense_lor = lorentzian(f_dense, *popt_lor)
     delta_dense = f_dense - mean_fs
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5))
+    fig, ax1 = plt.subplots(1, 1, figsize=(8.5, 5.2))
 
-    # Pannello 1: A0 vs f_in (Stile Bode grezzo: punti dello stesso colore del fit, niente bold, niente -3dB)
+    # A0 vs f_in (Stile Bode grezzo: punti dello stesso colore del fit, niente bold, niente -3dB)
     ax1.plot(f_in_arr / 1e3, A0_arr, 'o', color='#1f77b4', markersize=5.5, label='Dati')
     ax1.plot(f_dense / 1e3, A0_dense_lor, '-', color='#1f77b4', lw=2.0, label='Fit')
-    ax1.set_title(r'Campana di risonanza con $f_{\mathrm{in}}$')
-    ax1.set_xlabel(r'Frequenza $f_{\mathrm{in}}$ [kHz]')
-    ax1.set_ylabel(r'Ampiezza decadimento $A_0$ [mV]')
+    ax1.set_title(r'$A_0$ vs $f_{\mathrm{in}}$')
+    ax1.set_xlabel(r'$f_{\mathrm{in}}$ [kHz]')
+    ax1.set_ylabel(r'$A_0$ [mV]')
     ax1.set_ylim([0, 42])
     ax1.grid(True)
     ax1.legend(loc='upper right', framealpha=0.95)
-
-    # Pannello 2: A0 vs Δf = f_in - fs
-    ax2.plot(delta_f_arr, A0_arr, 'o', color='#1f77b4', markersize=5.5, label='Dati')
-    ax2.plot(delta_dense, A0_dense_lor, '-', color='#1f77b4', lw=2.0, label='Fit')
-    ax2.set_title(r'Campana di risonanza con $\Delta f = f_{\mathrm{in}} - f_s$')
-    ax2.set_xlabel(r'Scostamento in frequenza $\Delta f$ [Hz]')
-    ax2.set_ylabel(r'Ampiezza decadimento $A_0$ [mV]')
-    ax2.set_ylim([0, 42])
-    ax2.grid(True)
-    ax2.legend(loc='upper right', framealpha=0.95)
 
     fig.tight_layout()
     out_path = os.path.join(SCRIPT_DIR, 'campana_risonanza_A0_vs_freq.png')
@@ -153,28 +143,43 @@ def process_scope_subset(num):
     }
 
 def plot_gallery_inviluppi():
-    """Genera gallery_inviluppi_ringdown.png senza titoli dei singoli grafici e senza legende."""
-    selected_files = [17, 13, 19, 29]
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8), sharex=True, sharey=True)
+    """Genera gallery_inviluppi_ringdown.png ordinato dal più grande al più piccolo con titoli puliti."""
+    selected_files = [19, 13, 27, 17]
+    fig, axes = plt.subplots(2, 2, figsize=(13.5, 8.2), sharex=True, sharey=True)
 
-    for ax, num in zip(axes.flatten(), selected_files):
+    file_info = {}
+    with open(CSV_TABLE, 'r', encoding='utf-8') as f:
+        for r in csv.DictReader(f):
+            file_info[int(r['File_Num'])] = {
+                'fin': float(r['f_in_Hz']),
+                'A0': float(r['A0_mV'])
+            }
+
+    for i, (ax, num) in enumerate(zip(axes.flatten(), selected_files)):
         res = process_scope_subset(num)
-        ax.plot(res['t_rd_ms'], res['y_ac_mV'], color='#bdc3c7', alpha=0.6, linewidth=0.6)
-        ax.plot(res['t_rd_ms'], res['env_mV'], color='#e67e22', linewidth=1.8)
-        ax.plot(res['t_rd_ms'], res['fit_mV'], color='#c0392b', linestyle='--', linewidth=2.0)
+        fin_val = file_info[num]['fin']
+        a0_val = file_info[num]['A0']
 
+        l1, = ax.plot(res['t_rd_ms'], res['y_ac_mV'], color='#bdc3c7', alpha=0.6, linewidth=0.6, label='Segnale misurato')
+        l2, = ax.plot(res['t_rd_ms'], res['env_mV'], color='#e67e22', linewidth=1.8, label='Inviluppo di Hilbert')
+        l3, = ax.plot(res['t_rd_ms'], res['fit_mV'], color='#c0392b', linestyle='--', linewidth=2.0, label='Fit esponenziale')
+
+        ax.set_title(rf'$f_{{\mathrm{{in}}}} = {fin_val:.0f}\,\mathrm{{Hz}}$ ($A_0 = {a0_val:.1f}\,\mathrm{{mV}}$)')
         ax.grid(True)
         ax.set_xlim([0, 4.5])
         ax.set_ylim([-45, 45])
+
+        if i == 0:
+            ax.legend(handles=[l1, l2, l3], loc='upper right', framealpha=0.95)
 
     for ax in axes[-1, :]:
         ax.set_xlabel('Tempo dal taglio del gate [ms]')
     for ax in axes[:, 0]:
         ax.set_ylabel('Uscita TIA [mV]')
 
-    fig.suptitle("Esempi ringdown e fit dell'inviluppo", fontsize=13)
+    fig.suptitle("Esempi ringdown e fit dell'inviluppo", fontsize=12.5)
     fig.tight_layout()
-    fig.subplots_adjust(top=0.93)
+    fig.subplots_adjust(top=0.92)
 
     out_path = os.path.join(SCRIPT_DIR, 'gallery_inviluppi_ringdown.png')
     fig.savefig(out_path, dpi=300)
@@ -184,12 +189,95 @@ def plot_gallery_inviluppi():
     if os.path.exists(ARTIFACT_DIR):
         shutil.copy(out_path, os.path.join(ARTIFACT_DIR, 'gallery_inviluppi_ringdown.png'))
 
+def plot_deriva_frequenza_e_tau():
+    """Genera deriva_frequenza_e_tau.png con f0 in alto e tau/Q combinati in basso, tick asse X in Hertz interi."""
+    data = []
+    with open(CSV_TABLE, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            data.append({
+                'file_num': int(row['File_Num']),
+                'f_in': float(row['f_in_Hz']),
+                'fs': float(row['fs_rd_Hz']),
+                'tau': float(row['tau_ms']),
+                'Q': float(row['Q_factor'])
+            })
+
+    # Esclusione delle frequenze 417260 e 417460 Hz (estremi a basso SNR)
+    data_filtered = [d for d in data if int(round(d['f_in'])) not in (417260, 417460)]
+
+    # Ordinamento per frequenza di eccitazione crescente (da più bassa a più alta)
+    data_sorted = sorted(data_filtered, key=lambda x: x['f_in'])
+    nums = [d['file_num'] for d in data_sorted]
+    fs_arr = np.array([d['fs'] for d in data_sorted])
+    tau_arr = np.array([d['tau'] for d in data_sorted])
+    q_arr = np.array([d['Q'] for d in data_sorted])
+    fin_arr = np.array([d['f_in'] for d in data_sorted])
+
+    mean_fs = np.mean(fs_arr)
+    delta_max_min = np.max(fs_arr) - np.min(fs_arr)
+    mean_tau = np.mean(tau_arr)
+    mean_q = np.mean(q_arr)
+
+    # Etichette asse X in Hertz interi ordinati
+    xtick_labels = [f"{int(round(f))}" for f in fin_arr]
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(13.5, 7.5), sharex=True)
+
+    # 1. Grafico superiore: Frequenza di risonanza f1 vs f_in
+    ax1.plot(range(len(nums)), fs_arr, 'o-', color='#1f77b4', markersize=5.5,
+             label=rf'$f_1$ (media: {mean_fs:.2f} Hz)')
+    ax1.set_title(rf'Stabilità di $f_1$ al variare di $f_{{\mathrm{{in}}}}$ (escursione max-min: {delta_max_min:.1f} Hz)')
+    ax1.set_ylabel(r'$f_1$ [Hz]')
+    ax1.ticklabel_format(useOffset=False, style='plain', axis='y')
+    ax1.set_ylim([mean_fs - 10, mean_fs + 10])
+    ax1.grid(True)
+    ax1.legend(loc='lower left', framealpha=0.95)
+
+    # 2. Grafico inferiore: Tau e Q assieme sullo stesso grafico
+    ax2_twin = ax2.twinx()
+
+    l1 = ax2.plot(range(len(nums)), tau_arr, 's-', color='#27ae60', linewidth=1.8, markersize=5.5,
+                  label=rf'$\tau$ (media: {mean_tau:.3f} ms)')
+    l2 = ax2_twin.plot(range(len(nums)), q_arr, '^-', color='#8e44ad', linewidth=1.8, markersize=5.5,
+                       label=rf'$Q$ (media: {mean_q:.0f})')
+
+    tau_min, tau_max = 2.0, 2.8
+    ax2.set_ylim([tau_min, tau_max])
+    ax2_twin.set_ylim([tau_min * np.pi * mean_fs * 1e-3, tau_max * np.pi * mean_fs * 1e-3])
+
+    ax2.set_ylabel(r'Costante di decadimento $\tau$ [ms]', color='#27ae60')
+    ax2_twin.set_ylabel(r'Fattore di qualità $Q$', color='#8e44ad')
+    ax2.tick_params(axis='y', labelcolor='#27ae60')
+    ax2_twin.tick_params(axis='y', labelcolor='#8e44ad')
+
+    ax2.set_title(r'$\tau$ e $Q$ vs $f_{\mathrm{in}}$')
+    ax2.set_xlabel(r'Frequenza di eccitazione $f_{\mathrm{in}}$ [Hz]')
+    ax2.set_xticks(range(len(nums)))
+    ax2.set_xticklabels(xtick_labels, rotation=45, ha='right')
+    ax2.grid(True)
+
+    lines = l1 + l2
+    labels = [l.get_label() for l in lines]
+    ax2.legend(lines, labels, loc='upper right', framealpha=0.95)
+
+    plt.tight_layout()
+
+    out_path = os.path.join(SCRIPT_DIR, 'deriva_frequenza_e_tau.png')
+    fig.savefig(out_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    print(f"-> Grafico Deriva e Invarianza salvato in: {out_path}")
+
+    if os.path.exists(ARTIFACT_DIR):
+        shutil.copy(out_path, os.path.join(ARTIFACT_DIR, 'deriva_frequenza_e_tau.png'))
+
 def main():
     print("=" * 70)
     print("  GENERAZIONE RAPIDA GRAFICI RISPOSTA IN FREQUENZA E RINGDOWN")
     print("=" * 70)
     plot_campana_risonanza()
     plot_gallery_inviluppi()
+    plot_deriva_frequenza_e_tau()
     print("Completato con successo!")
 
 if __name__ == '__main__':

@@ -270,28 +270,17 @@ def main():
     # =========================================================================
     # GRAFICO 1: CAMPANA DI RISONANZA A0 vs f_in e A0 vs Δ(f_in - fs)
     # =========================================================================
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5))
+    fig, ax1 = plt.subplots(1, 1, figsize=(8.5, 5.2))
 
-    # Pannello 1: A0 vs f_in (Stile Bode grezzo: punti dello stesso colore del fit, niente bold, niente -3dB)
+    # A0 vs f_in (Stile Bode grezzo: punti dello stesso colore del fit, niente bold, niente -3dB)
     ax1.plot(f_in_arr / 1e3, A0_arr, 'o', color='#1f77b4', markersize=5.5, label='Dati')
     ax1.plot(f_dense / 1e3, A0_dense_lor, '-', color='#1f77b4', lw=2.0, label='Fit')
-    ax1.set_title(r'Campana di risonanza con $f_{\mathrm{in}}$')
-    ax1.set_xlabel(r'Frequenza $f_{\mathrm{in}}$ [kHz]')
-    ax1.set_ylabel(r'Ampiezza decadimento $A_0$ [mV]')
+    ax1.set_title(r'$A_0$ vs $f_{\mathrm{in}}$')
+    ax1.set_xlabel(r'$f_{\mathrm{in}}$ [kHz]')
+    ax1.set_ylabel(r'$A_0$ [mV]')
     ax1.set_ylim([0, 42])
     ax1.grid(True)
     ax1.legend(loc='upper right', framealpha=0.95)
-
-    # Pannello 2: A0 vs Δf = f_in - fs
-    delta_dense = f_dense - mean_fs
-    ax2.plot(delta_f_arr, A0_arr, 'o', color='#1f77b4', markersize=5.5, label='Dati')
-    ax2.plot(delta_dense, A0_dense_lor, '-', color='#1f77b4', lw=2.0, label='Fit')
-    ax2.set_title(r'Campana di risonanza con $\Delta f = f_{\mathrm{in}} - f_s$')
-    ax2.set_xlabel(r'Scostamento in frequenza $\Delta f$ [Hz]')
-    ax2.set_ylabel(r'Ampiezza decadimento $A_0$ [mV]')
-    ax2.set_ylim([0, 42])
-    ax2.grid(True)
-    ax2.legend(loc='upper right', framealpha=0.95)
 
     fig.tight_layout()
     fig1_path = os.path.join(base_dir, 'campana_risonanza_A0_vs_freq.png')
@@ -300,83 +289,94 @@ def main():
     print(f"[GRAFICO 1 GENERATO] {fig1_path}")
 
     # =========================================================================
-    # GRAFICO 2: DERIVA TEMPORALE fs ED INVARIANZA DI τ E Q
+    # GRAFICO 2: STABILITÀ DI f1 ED INVARIANZA DI TAU E Q ORDINATI PER FREQUENZA
     # =========================================================================
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
+    # Esclusione delle frequenze 417260 e 417460 Hz (estremi a basso SNR)
+    results_filtered = [r for r in results if int(round(r['f_in'])) not in (417260, 417460)]
+    results_sorted = sorted(results_filtered, key=lambda x: x['f_in'])
+    sorted_nums = np.array([r['file_num'] for r in results_sorted])
+    sorted_fs = np.array([r['fs_rd'] for r in results_sorted])
+    sorted_tau = np.array([r['tau_ms'] for r in results_sorted])
+    sorted_Q = np.array([r['Q'] for r in results_sorted])
+    sorted_fin = np.array([r['f_in'] for r in results_sorted])
 
-    # Ordina cronologicamente in base al numero del file
-    results_chrono = sorted(results, key=lambda x: x['file_num'])
-    chrono_nums = np.array([r['file_num'] for r in results_chrono])
-    chrono_fs = np.array([r['fs_rd'] for r in results_chrono])
-    chrono_tau = np.array([r['tau_ms'] for r in results_chrono])
-    chrono_Q = np.array([r['Q'] for r in results_chrono])
+    mean_fs_plot = np.mean(sorted_fs)
+    mean_tau_plot = np.mean(sorted_tau)
+    mean_Q_plot = np.mean(sorted_Q)
+    delta_max_min = np.max(sorted_fs) - np.min(sorted_fs)
+    xtick_labels = [f"{int(round(f))}" for f in sorted_fin]
 
-    # Pannello Superiore: Deriva di fs
-    ax1.plot(range(len(chrono_nums)), chrono_fs, 'o-', color='#2c3e50', linewidth=1.6, markersize=6)
-    ax1.axhline(mean_fs, color='#e74c3c', linestyle='--', linewidth=1.8,
-                label=rf'Frequenza Naturale Media $\bar{{f}}_s = {mean_fs:.2f}$ Hz ($\sigma = \pm {std_fs:.2f}$ Hz)')
-    ax1.fill_between(range(len(chrono_nums)), mean_fs - std_fs, mean_fs + std_fs,
-                     color='#e74c3c', alpha=0.15, label=r'Intervallo di confidenza $\pm 1\sigma$')
-    ax1.set_ylabel(r'Frequenza Naturale $f_s$ [Hz]', fontweight='bold')
-    ax1.set_title(r'Verifica Deriva Termica di $f_s$ durante la Sequenza di Misura (Deriva totale $\approx 8$ Hz)',
-                  fontweight='bold', pad=10)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(13.5, 7.5), sharex=True)
+
+    # 1. Pannello Superiore: Stabilità di f1
+    ax1.plot(range(len(sorted_nums)), sorted_fs, 'o-', color='#1f77b4', markersize=5.5,
+             label=rf'$f_1$ (media: {mean_fs_plot:.2f} Hz)')
+    ax1.set_title(rf'Stabilità di $f_1$ al variare di $f_{{\mathrm{{in}}}}$ (escursione max-min: {delta_max_min:.1f} Hz)')
+    ax1.set_ylabel(r'$f_1$ [Hz]')
+    ax1.ticklabel_format(useOffset=False, style='plain', axis='y')
+    ax1.set_ylim([mean_fs_plot - 10, mean_fs_plot + 10])
     ax1.grid(True)
-    ax1.legend(loc='lower left', framealpha=0.92)
+    ax1.legend(loc='lower left', framealpha=0.95)
 
-    # Pannello Inferiore: Invarianza di tau e Q
+    # 2. Pannello Inferiore: Tau e Q assieme sullo stesso grafico
     ax2_twin = ax2.twinx()
-    l1 = ax2.plot(range(len(chrono_nums)), chrono_tau, 's-', color='#27ae60', linewidth=1.6, markersize=5.5,
-                  label=rf'Costante $\tau$ (Media: ${mean_tau:.3f} \pm {std_tau:.3f}$ ms)')
-    l2 = ax2_twin.plot(range(len(chrono_nums)), chrono_Q, '^-', color='#8e44ad', linewidth=1.6, markersize=5.5,
-                       label=rf'Fattore di Qualità $Q$ (Media: ${mean_Q:.0f} \pm {std_Q:.0f}$)')
 
-    tau_min, tau_max = 1.5, 2.9
+    l1 = ax2.plot(range(len(sorted_nums)), sorted_tau, 's-', color='#27ae60', linewidth=1.8, markersize=5.5,
+                  label=rf'$\tau$ (media: {mean_tau_plot:.3f} ms)')
+    l2 = ax2_twin.plot(range(len(sorted_nums)), sorted_Q, '^-', color='#8e44ad', linewidth=1.8, markersize=5.5,
+                       label=rf'$Q$ (media: {mean_Q_plot:.0f})')
+
+    tau_min, tau_max = 2.0, 2.8
     ax2.set_ylim([tau_min, tau_max])
-    ax2_twin.set_ylim([tau_min * np.pi * mean_fs * 1e-3, tau_max * np.pi * mean_fs * 1e-3])
+    ax2_twin.set_ylim([tau_min * np.pi * mean_fs_plot * 1e-3, tau_max * np.pi * mean_fs_plot * 1e-3])
 
-    ax2.set_ylabel(r'Costante di Decadimento $\tau$ [ms]', color='#27ae60', fontweight='bold')
-    ax2_twin.set_ylabel(r'Fattore di Qualità $Q = \pi f_s \tau$', color='#8e44ad', fontweight='bold')
-    ax2.set_xlabel(r'Sequenza Cronologica File di Misura', fontweight='bold')
-    ax2.set_xticks(range(len(chrono_nums)))
-    ax2.set_xticklabels([f"scope_{n}" for n in chrono_nums], rotation=45, ha='right')
+    ax2.set_ylabel(r'Costante di decadimento $\tau$ [ms]', color='#27ae60')
+    ax2_twin.set_ylabel(r'Fattore di qualità $Q$', color='#8e44ad')
+    ax2.tick_params(axis='y', labelcolor='#27ae60')
+    ax2_twin.tick_params(axis='y', labelcolor='#8e44ad')
+
+    ax2.set_title(r'$\tau$ e $Q$ vs $f_{\mathrm{in}}$')
+    ax2.set_xlabel(r'Frequenza di eccitazione $f_{\mathrm{in}}$ [Hz]')
+    ax2.set_xticks(range(len(sorted_nums)))
+    ax2.set_xticklabels(xtick_labels, rotation=45, ha='right')
     ax2.grid(True)
 
     lines = l1 + l2
     labels = [l.get_label() for l in lines]
-    ax2.legend(lines, labels, loc='lower left', framealpha=0.92)
-    ax2.set_title(r'Invarianza di $\tau$ e $Q$ rispetto alla Frequenza di Eccitazione (Proprietà Intrinseca Dissipativa)',
-                  fontweight='bold', pad=10)
+    ax2.legend(lines, labels, loc='upper right', framealpha=0.95)
 
-    fig.suptitle('Stabilità Strumentale e Robustezza dell\'Estrapolazione Esponenziale del Ringdown',
-                 fontsize=13, fontweight='bold', y=1.02)
     plt.tight_layout()
+
     fig2_path = os.path.join(base_dir, 'deriva_frequenza_e_tau.png')
-    plt.savefig(fig2_path, dpi=300, bbox_inches='tight')
-    plt.close()
+    fig.savefig(fig2_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
     print(f"[GRAFICO 2 GENERATO] {fig2_path}")
 
     # =========================================================================
     # GRAFICO 3: GALLERIA COMPARATIVA FORME D'ONDA ED INVILUPPI
     # =========================================================================
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8), sharex=True, sharey=True)
-    selected_files = [17, 13, 19, 29]
+    fig, axes = plt.subplots(2, 2, figsize=(13.5, 8), sharex=True, sharey=True)
+    selected_files = [19, 13, 29, 17]
 
-    for ax, num in zip(axes.flatten(), selected_files):
+    for i, (ax, num) in enumerate(zip(axes.flatten(), selected_files)):
         res_sel = next(r for r in results if r['file_num'] == num)
         t_ms = res_sel['t_rd_ms']
         y_mV = res_sel['y_ac_mV']
         env_mV = res_sel['env_mV']
         fit_mV = res_sel['fit_mV']
 
-        ax.plot(t_ms, y_mV, color='#bdc3c7', alpha=0.6, linewidth=0.6)
-        ax.plot(t_ms, env_mV, color='#e67e22', linewidth=1.8)
-        ax.plot(t_ms, fit_mV, color='#c0392b', linestyle='--', linewidth=2.0)
+        l1, = ax.plot(t_ms, y_mV, color='#bdc3c7', alpha=0.6, linewidth=0.6, label='Segnale misurato')
+        l2, = ax.plot(t_ms, env_mV, color='#e67e22', linewidth=1.8, label='Inviluppo di Hilbert')
+        l3, = ax.plot(t_ms, fit_mV, color='#c0392b', linestyle='--', linewidth=2.0, label='Fit esponenziale')
 
+        ax.set_title(rf'$f_{{\mathrm{{in}}}} = {res_sel["f_in"]:.0f}\,\mathrm{{Hz}}$ ($A_0 = {res_sel["A0_mV"]:.1f}\,\mathrm{{mV}}$)')
         ax.grid(True)
         ax.set_xlim([0, 4.5])
         ax.set_ylim([-45, 45])
 
-    # Etichette assi senza bold sui bordi esterni
+        if i == 0:
+            ax.legend(handles=[l1, l2, l3], loc='upper right', framealpha=0.95)
+
     for ax in axes[-1, :]:
         ax.set_xlabel('Tempo dal taglio del gate [ms]')
     for ax in axes[:, 0]:
@@ -384,7 +384,7 @@ def main():
 
     fig.suptitle("Esempi ringdown e fit dell'inviluppo", fontsize=13)
     fig.tight_layout()
-    fig.subplots_adjust(top=0.93)
+    fig.subplots_adjust(top=0.92)
     fig3_path = os.path.join(base_dir, 'gallery_inviluppi_ringdown.png')
     fig.savefig(fig3_path, dpi=300)
     plt.close(fig)

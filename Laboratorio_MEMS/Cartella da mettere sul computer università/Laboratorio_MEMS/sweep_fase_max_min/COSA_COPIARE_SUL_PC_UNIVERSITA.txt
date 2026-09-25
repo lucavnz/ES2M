@@ -1,0 +1,38 @@
+================================================================================
+ COSA COPIARE SUL COMPUTER DELL'UNIVERSITA' (CHIAVETTA USB)
+ Nuova Misura: Vmax, Vmin e Ampiezza di Picco A_peak vs Burst Phase
+================================================================================
+
+Se sulla chiavetta USB (o sul PC dell'universita') hai GIA' la cartella 
+"Laboratorio_MEMS" con la cartella "python" portatile:
+
+NON DEVI RICOPIARE TUTTO! Copia SOLAMENTE:
+  1. La nuova cartella:
+     Laboratorio_MEMS\sweep_fase_max_min\
+  2. Il nuovo file launcher rapido:
+     Laboratorio_MEMS\avvia_sweep_fase_max_min.bat
+
+Fatto! All'universita' apri "Laboratorio_MEMS" e fai doppio clic su:
+  -> avvia_sweep_fase_max_min.bat
+
+================================================================================
+ COME FUNZIONA:
+================================================================================
+1. Chiede i parametri di sweep:
+   - Fase iniziale [default: -180.0°]
+   - Fase finale   [default: +180.0°]
+   - Passo di fase [default: 5.0°]
+   - Medie hardware oscilloscopio [default: 32]
+   - Margine attesa post medie [default: 0.05 s]
+2. Per ogni fase:
+   - Imposta la fase di burst sull'Agilent 33220A (:BURSt:PHASe).
+   - Fa acquisire le medie hardware all'oscilloscopio MSO-X 3014A.
+   - Misura automaticamente dalla schermata:
+     * Vmax [mV]
+     * Vmin [mV]
+     * A_peak = max(|Vmax|, |Vmin|) [mV]
+     * Vpp = Vmax - Vmin [mV]
+3. Salva un unico file CSV riassuntivo pulito:
+   'misure_max_min_vs_fase_YYYYMMDD_HHMMSS.csv'
+   che puoi poi passarmi per plottare all'istante!
+================================================================================
